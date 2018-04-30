@@ -21,6 +21,15 @@ class HOD(object):
     def number_galaxies_mean(self, log_mass, magnitude, redshift):
         pass
 
+    def get_number_satellites(self, log_mass, redshift):
+        pass
+
+    def get_magnitude_central(self, log_mass, redshift):
+        pass
+
+    def get_magnitude_satellites(self, log_mass, redshift, number_satellites):
+        pass
+
 
 class HOD_BGS(HOD):
 
@@ -37,6 +46,11 @@ class HOD_BGS(HOD):
         self._logM1_interpolator = \
             self._initialize_mass_interpolator(par.M1_Ls, par.M1_Mt, par.M1_am)
 
+        self._central_interpolator = self._initialize_central_interpolator()
+
+        
+
+
     def _initialize_slide_factor_interpolator(self):
         # read file of slide factors
         factors = np.loadtxt(par.slide_file)[::-1]
@@ -47,8 +61,8 @@ class HOD_BGS(HOD):
                                        bounds_error=False, fill_value=None)
 
     def _initialize_mass_interpolator(self, L_s, M_t, a_m):
-
-        log_mass = np.arange(10, 16, 1e-5)[::-1]
+        
+        log_mass = np.arange(10, 16, 0.001)[::-1]
 
         # same functional form as Eq. 11 from Zehavi 2011
         lum = L_s*(10**log_mass/M_t)**a_m * np.exp(1-(M_t/10**log_mass))
@@ -56,6 +70,41 @@ class HOD_BGS(HOD):
 
         return RegularGridInterpolator((magnitudes,), log_mass,
                                        bounds_error=False, fill_value=None)
+
+    def _initialize_central_interpolator(self):
+
+        ### ADD OPTION TO SAVE/READ FILE
+
+        # arrays of mass, x, redshift, and 3d array of magnitudes
+        # x is the scatter in the central luminosity from the mean
+        log_masses = np.arange(10, 16, 0.1)
+        redshifts = np.arange(0, 1, 0.1)
+        xs = np.arange(-3.5, 3.501, 0.02)
+        magnitudes = np.zeros((len(log_masses), len(redshifts), len(xs)))
+
+        # fill in array of magnitudes
+        mags = np.arange(-25, -10, 0.01)
+        arr_ones = np.ones(len(mags), dtype="f")
+        for i in range(len(log_masses)):
+            for j in range(len(redshifts)):
+
+                x = np.sqrt(2) * (log_masses[i]-np.log10(self.Mmin(mags, arr_ones*redshifts[j]))) / self.sigma_logM(mags, arr_ones*redshifts[j])
+
+                if x[-1] < 3.5: continue
+
+                # find this in the array xs
+                idx = np.searchsorted(x, xs)
+
+                # interpolate 
+                f = (xs - x[idx-1]) / (x[idx] - x[idx-1])
+                magnitudes[i,j,:] = mags[idx-1] + f*(mags[idx] - mags[idx-1])
+
+        # create RegularGridInterpolator object
+        return RegularGridInterpolator((log_masses, redshifts, xs),
+                              magnitudes, bounds_error=False, fill_value=None)
+    
+    def _initialize_satellite_interpolator(self):
+        pass
 
 
     def slide_factor(self, magnitude, redshift):
@@ -207,6 +256,41 @@ class HOD_BGS(HOD):
             self.number_satellites_mean(log_mass, magnitude, redshift)
 
 
+    def get_number_satellites(self, log_mass, redshift):
+        """
+        Randomly draw the number of satellite galaxies for each halo
+        from a Poisson distribution
+        """
+        # faint magnitude threshold at each redshift
+        magnitude = lf.magnitude_faint(redshift)
+
+        # mean number of satellites in each halo brighter than the
+        # faint magnitude threshold
+        number_mean = self.number_satellites_mean(log_mass, magnitude, redshift)
+
+        # draw random number from Poisson distribution
+        return np.random.poisson(number_mean)
+
+
+    def get_magnitude_central(self, log_mass, redshift):
+        """
+        Use the HODs to draw a random magnitude for each central galaxy
+        """
+        # random number from spline kernel distribution
+        x = spline.random(size=len(log_mass))
+
+        # return corresponding central magnitude
+        points = np.array(zip(log_mass, redshift, x))
+        return self._central_interpolator(points)
+    
+
+    def get_magnitude_satellites(self, log_mass, redshift, number_satellites):
+        """
+        Use the HODs to draw a random magnitude for each satellite galaxy
+        """
+        pass
+
+
 
 def test():
     # test plots
@@ -278,6 +362,29 @@ def test():
     plt.title("Mr < -20")
     plt.xlim(11,15.3)
     plt.ylim(-2,2.3)
+    plt.show()
+
+
+
+    print('RANDOMLY GENERATING MAGNITUDES FOR CENTRAL GALAXIES')
+    mag = -21
+    log_mass = np.arange(10,16,0.01)
+    z = np.ones(len(log_mass)) * 0.1
+    magnitude = np.ones(len(log_mass)) * mag
+
+    num = hod.number_centrals_mean(log_mass, magnitude, z)
+    plt.plot(log_mass, num, label='mean')
+
+    num_av = np.zeros(len(log_mass))
+    for i in range(1000):
+        mags = hod.get_magnitude_central(log_mass, z)
+        idx = mags<mag
+        num_av[idx] += 1./1000
+
+    plt.plot(log_mass, num_av, label='random')
+    plt.legend(loc='upper left')
+    plt.xlabel('log(M)')
+    plt.ylabel('N')
     plt.show()
 
 if __name__ == "__main__":

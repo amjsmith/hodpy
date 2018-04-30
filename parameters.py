@@ -3,6 +3,15 @@
 # directory in which lookup files are stored
 lookup_dir = "lookup/"
 
+# input halo catalogue
+halo_file = "input/halo_catalogue_small.hdf5"
+
+# output directory
+output_dir = "output/"
+
+# apparent magnitude threshold
+mag_faint = 20.0
+
 ### Cosmology ###
 h0     = 0.73
 OmegaM = 0.25
@@ -16,11 +25,13 @@ alpha    = -1.23
 P        = 1.8     # evolution params
 Q        = 0.7
 
+# k-correction
+k_corr_file = lookup_dir+"k_corr_rband_z01.dat"
+
 ### Mass function ###
 mf_fits_file   = lookup_dir+"mf_fits.dat"   # fit to MF of simulation
 deltacrit_file = lookup_dir+"deltacrit.dat" # delta_crit(z)
 sigma_file     = lookup_dir+"sigma.dat"     # sigma(M)
-
 
 ### HOD parameters ###
 slide_file = lookup_dir+"slide_factors.dat"

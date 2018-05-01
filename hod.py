@@ -32,6 +32,9 @@ class HOD(object):
 
 
 class HOD_BGS(HOD):
+        """
+        HODs used to create the mock catalogue described in Smith et al. 2017
+        """
 
     def __init__(self):
         self.mf = MassFunction()
@@ -39,7 +42,7 @@ class HOD_BGS(HOD):
         self.lf = LuminosityFunctionTarget(par.lf_file, par.Phi_star, 
                                            par.M_star, par.alpha, par.P, par.Q)
 
-        self.__slide_interpolator = self._initialize_slide_factor_interpolator()
+        self.__slide_interpolator =self.__initialize_slide_factor_interpolator()
         self.__logMmin_interpolator = \
             self.__initialize_mass_interpolator(par.Mmin_Ls, par.Mmin_Mt, 
                                                par.Mmin_am)
@@ -167,7 +170,7 @@ class HOD_BGS(HOD):
             array of slide factors
         """
         points = np.array(zip(magnitude, redshift))
-        return self._slide_interpolator(points)
+        return self.__slide_interpolator(points)
 
 
     def Mmin(self, magnitude, redshift):
@@ -189,7 +192,7 @@ class HOD_BGS(HOD):
         magnitude_z0 = self.lf.magnitude(n, np.ones(len(n))*0.1)
 
         # find Mmin
-        Mmin = 10**self._logMmin_interpolator(magnitude_z0)
+        Mmin = 10**self.__logMmin_interpolator(magnitude_z0)
 
         # use slide factor to evolve Mmin
         return Mmin * self.slide_factor(magnitude, redshift)
@@ -213,7 +216,7 @@ class HOD_BGS(HOD):
         magnitude_z0 = self.lf.magnitude(n, np.ones(len(n))*0.1)
 
         # find M1
-        M1 = 10**self._logM1_interpolator(magnitude_z0)
+        M1 = 10**self.__logM1_interpolator(magnitude_z0)
 
         # use slide factor to evolve M1
         return M1 * self.slide_factor(magnitude, redshift)
@@ -388,7 +391,7 @@ class HOD_BGS(HOD):
 
         # return corresponding central magnitudes
         points = np.array(zip(log_mass, redshift, x))
-        return self._central_interpolator(points)
+        return self.__central_interpolator(points)
     
 
     def get_magnitude_satellites(self, log_mass, redshift, number_satellites):
@@ -416,7 +419,7 @@ class HOD_BGS(HOD):
 
         # find corresponding satellite magnitudes
         points = np.array(zip(log_mass_satellite, redshift_satellite, log_x))
-        return halo_index, self._satellite_interpolator(points)
+        return halo_index, self.__satellite_interpolator(points)
         
 
 

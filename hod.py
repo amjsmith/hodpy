@@ -24,7 +24,7 @@ class HOD(object):
     def get_number_satellites(self, log_mass, redshift):
         pass
 
-    def get_magnitude_central(self, log_mass, redshift):
+    def get_magnitude_centrals(self, log_mass, redshift):
         pass
 
     def get_magnitude_satellites(self, log_mass, redshift, number_satellites):
@@ -39,22 +39,28 @@ class HOD_BGS(HOD):
         self.lf = LuminosityFunctionTarget(par.lf_file, par.Phi_star, 
                                            par.M_star, par.alpha, par.P, par.Q)
 
-        self._slide_interpolator = self._initialize_slide_factor_interpolator()
-        self._logMmin_interpolator = \
-            self._initialize_mass_interpolator(par.Mmin_Ls, par.Mmin_Mt, 
+        self.__slide_interpolator = self._initialize_slide_factor_interpolator()
+        self.__logMmin_interpolator = \
+            self.__initialize_mass_interpolator(par.Mmin_Ls, par.Mmin_Mt, 
                                                par.Mmin_am)
-        self._logM1_interpolator = \
-            self._initialize_mass_interpolator(par.M1_Ls, par.M1_Mt, par.M1_am)
+        self.__logM1_interpolator = \
+            self.__initialize_mass_interpolator(par.M1_Ls, par.M1_Mt, par.M1_am)
 
         print("Generating lookup table of central galaxy magnitudes")
-        self._central_interpolator = self._initialize_central_interpolator()
+        self.__central_interpolator = self.__initialize_central_interpolator()
 
         print("Generating lookup table of satellite galaxy magnitudes")
-        self._satellite_interpolator = self._initialize_satellite_interpolator()
+        self.__satellite_interpolator = \
+                                  self.__initialize_satellite_interpolator()
         print("Done")
 
 
-    def _initialize_slide_factor_interpolator(self):
+    def __initialize_slide_factor_interpolator(self):
+        # creates a RegularGridInterpolator object used for finding 
+        # the 'slide factor' as a function of mag and z
+
+        ### ADD OPTION TO CALCULATE THESE FACTORS
+
         # read file of slide factors
         factors = np.loadtxt(par.slide_file)[::-1]
         magnitudes = np.arange(-30, 0.01, 0.1)
@@ -63,7 +69,9 @@ class HOD_BGS(HOD):
         return RegularGridInterpolator((magnitudes, redshifts), factors,
                                        bounds_error=False, fill_value=None)
 
-    def _initialize_mass_interpolator(self, L_s, M_t, a_m):
+    def __initialize_mass_interpolator(self, L_s, M_t, a_m):
+        # creates a RegularGridInterpolator object used for finding 
+        # the HOD parameters Mmin or M1 (at z=0.1) as a function of log_mass
         
         log_mass = np.arange(10, 16, 0.001)[::-1]
 
@@ -74,7 +82,10 @@ class HOD_BGS(HOD):
         return RegularGridInterpolator((magnitudes,), log_mass,
                                        bounds_error=False, fill_value=None)
 
-    def _initialize_central_interpolator(self):
+    def __initialize_central_interpolator(self):
+        # creates a RegularGridInterpolator object used for finding 
+        # the magnitude of central galaxies as a function of log_mass,
+        # z, and random number x from spline kernel distribution
 
         ### ADD OPTION TO SAVE/READ FILE
 
@@ -107,7 +118,10 @@ class HOD_BGS(HOD):
                               magnitudes, bounds_error=False, fill_value=None)
     
 
-    def _initialize_satellite_interpolator(self):
+    def __initialize_satellite_interpolator(self):
+        # creates a RegularGridInterpolator object used for finding 
+        # the magnitude of satellite galaxies as a function of log_mass,
+        # z, and random number log_x (x is uniform random between 0 and 1)
         log_masses = np.arange(10, 16, 0.1)
         redshifts = np.arange(0, 1, 0.1)
         log_xs = np.arange(-12, 0.01, 0.02)
@@ -139,11 +153,18 @@ class HOD_BGS(HOD):
         return RegularGridInterpolator((log_masses, redshifts, log_xs),
                               magnitudes, bounds_error=False, fill_value=None)
 
+
     def slide_factor(self, magnitude, redshift):
         """
-        Factor by which the HOD for a fixed number density must
-        slide along the mass axis in order to produce the number
-        density as specified by the target luminosity function
+        Factor by when the HOD mass parameters (ie Mmin, M0 and M1) must
+        be multiplied by in order to produce the number density of
+        galaxies as specified by the target luminosity function
+
+        Args:
+            magnitude: array of absolute magnitude threshold
+            redshift:  array of halo redshifts
+        Returns:
+            array of slide factors
         """
         points = np.array(zip(magnitude, redshift))
         return self._slide_interpolator(points)
@@ -151,8 +172,15 @@ class HOD_BGS(HOD):
 
     def Mmin(self, magnitude, redshift):
         """
-        HOD parameter Mmin. Mass at which halo has a 50% probability
-        of containing a central galaxy brighter than the magnitude threshold
+        HOD parameter Mmin, which is the mass at which a halo has a 50%
+        change of containing a central galaxy brighter than the magnitude 
+        threshold
+
+        Args:
+            magnitude: array of absolute magnitude threshold
+            redshift:  array of halo redshifts
+        Returns:
+            array of Mmin
         """
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
@@ -169,8 +197,14 @@ class HOD_BGS(HOD):
 
     def M1(self, magnitude, redshift):
         """
-        HOD parameter M1. Mass at which the halo contains, on average,
-        1 satellite galaxy brighter than the magnitude threshold
+        HOD parameter M1, which is the mass at which a halo contains an
+        average of 1 satellite brighter than the magnitude threshold
+
+        Args:
+            magnitude: array of absolute magnitude threshold
+            redshift:  array of halo redshifts
+        Returns:
+            array of M1
         """
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
@@ -187,7 +221,14 @@ class HOD_BGS(HOD):
 
     def M0(self, magnitude, redshift):
         """
-        HOD paramter M0. Cut-off mass scale for satellites
+        HOD parameter M0, which sets the cut-off mass scale for satellites
+        satellites
+
+        Args:
+            magnitude: array of absolute magnitude threshold
+            redshift:  array of halo redshifts
+        Returns:
+            array of M0
         """
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
@@ -205,7 +246,14 @@ class HOD_BGS(HOD):
 
     def alpha(self, magnitude, redshift):
         """
-        HOD paramter alpha. Sets the slope of the power law for satellites
+        HOD parameter alpha, which sets the slope of the power law for
+        satellites
+
+        Args:
+            magnitude: array of absolute magnitude threshold
+            redshift:  array of halo redshifts
+        Returns:
+            array of alpha
         """
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
@@ -223,8 +271,14 @@ class HOD_BGS(HOD):
 
     def sigma_logM(self, magnitude, redshift):
         """
-        HOD paramter sigma_logM. Sets the width of the step for central
-        galaxies, ie the scatter in the magnitude of central galaxies
+        HOD parameter sigma_logM, which sets the amount of scatter in 
+        the luminosity of central galaxies
+
+        Args:
+            magnitude: array of absolute magnitude threshold
+            redshift:  array of halo redshifts
+        Returns:
+            array of sigma_logM
         """
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
@@ -247,7 +301,7 @@ class HOD_BGS(HOD):
 
         Args:
             log_mass:  array of the log10 of halo mass (Msun/h)
-            magnitude: absolute magnitude threshold
+            magnitude: array of absolute magnitude threshold
             redshift:  array of halo redshifts
         Returns:
             array of mean number of central galaxies
@@ -266,7 +320,7 @@ class HOD_BGS(HOD):
 
         Args:
             log_mass:  array of the log10 of halo mass (Msun/h)
-            magnitude: absolute magnitude threshold
+            magnitude: array of absolute magnitude threshold
             redshift:  array of halo redshifts
         Returns:
             array of mean number of satellite galaxies
@@ -288,7 +342,7 @@ class HOD_BGS(HOD):
 
         Args:
             log_mass:  array of the log10 of halo mass (Msun/h)
-            magnitude: absolute magnitude threshold
+            magnitude: array of absolute magnitude threshold
             redshift:  array of halo redshifts
         Returns:
             array of mean number of galaxies
@@ -319,7 +373,7 @@ class HOD_BGS(HOD):
         return np.random.poisson(number_mean)
 
 
-    def get_magnitude_central(self, log_mass, redshift):
+    def get_magnitude_centrals(self, log_mass, redshift):
         """
         Use the HODs to draw a random magnitude for each central galaxy
 
@@ -458,7 +512,7 @@ def test():
     N = 100
     for i in range(N):
         print("REALIZATION", i, "OF", N)
-        mags = hod.get_magnitude_central(log_mass, z)
+        mags = hod.get_magnitude_centrals(log_mass, z)
         idx = mags<mag
         num_av_cen[idx] += 1./N
 

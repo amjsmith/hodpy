@@ -46,9 +46,12 @@ class HOD_BGS(HOD):
         self._logM1_interpolator = \
             self._initialize_mass_interpolator(par.M1_Ls, par.M1_Mt, par.M1_am)
 
+        print("Generating lookup table of central galaxy magnitudes")
         self._central_interpolator = self._initialize_central_interpolator()
 
-        
+        print("Generating lookup table of satellite galaxy magnitudes")
+        self._satellite_interpolator = self._initialize_satellite_interpolator()
+        print("Done")
 
 
     def _initialize_slide_factor_interpolator(self):
@@ -103,9 +106,38 @@ class HOD_BGS(HOD):
         return RegularGridInterpolator((log_masses, redshifts, xs),
                               magnitudes, bounds_error=False, fill_value=None)
     
-    def _initialize_satellite_interpolator(self):
-        pass
 
+    def _initialize_satellite_interpolator(self):
+        log_masses = np.arange(10, 16, 0.1)
+        redshifts = np.arange(0, 1, 0.1)
+        log_xs = np.arange(-12, 0.01, 0.02)
+        magnitudes = np.zeros((len(log_masses), len(redshifts), len(log_xs)))
+
+        # fill in array of magnitudes
+        mags = np.arange(-25, -8, 0.01)
+        mag_faint = self.lf.magnitude_faint(redshifts)
+        arr_ones = np.ones(len(mags))
+        for i in range(len(log_masses)):
+            for j in range(len(redshifts)):
+                Nsat = self.number_satellites_mean(arr_ones*log_masses[i], mags,
+                                                   arr_ones*redshifts[j])
+                Nsat_faint = self.number_satellites_mean(arr_ones*log_masses[i],
+                                   arr_ones*mag_faint[j],arr_ones*redshifts[j])
+
+                log_x = np.log10(Nsat) - np.log10(Nsat_faint)
+
+                if log_x[-1] == -np.inf: continue
+
+                # find this in the array log_xs
+                idx = np.searchsorted(log_x, log_xs)
+
+                # interpolate 
+                f = (log_xs - log_x[idx-1]) / (log_x[idx] - log_x[idx-1])
+                magnitudes[i,j,:] = mags[idx-1] + f*(mags[idx] - mags[idx-1])
+
+        # create RegularGridInterpolator object
+        return RegularGridInterpolator((log_masses, redshifts, log_xs),
+                              magnitudes, bounds_error=False, fill_value=None)
 
     def slide_factor(self, magnitude, redshift):
         """
@@ -210,12 +242,15 @@ class HOD_BGS(HOD):
     
     def number_centrals_mean(self, log_mass, magnitude, redshift):
         """
-        Returns the average number of central galaxies in haloes, 
-        using the evolving HODs described in Smith et al 2017
-        
-        log_mass  : log10 of the mass of the halo, in Msun/h
-        magnitude : r-band absolute magnitude threshold (at z=0.1)
-        redshift  : redshift of the halo
+        Average number of central galaxies in each halo brighter than
+        some absolute magnitude threshold
+
+        Args:
+            log_mass:  array of the log10 of halo mass (Msun/h)
+            magnitude: absolute magnitude threshold
+            redshift:  array of halo redshifts
+        Returns:
+            array of mean number of central galaxies
         """
 
         # use pseudo gaussian spline kernel
@@ -226,12 +261,15 @@ class HOD_BGS(HOD):
 
     def number_satellites_mean(self, log_mass, magnitude, redshift):
         """
-        Returns the average number of central galaxies in haloes, 
-        using the evolving HODs described in Smith et al 2017
-        
-        log_mass  : log10 of the mass of the halo, in Msun/h
-        magnitude : r-band absolute magnitude threshold (at z=0.1)
-        redshift  : redshift of the halo
+        Average number of satellite galaxies in each halo brighter than
+        some absolute magnitude threshold
+
+        Args:
+            log_mass:  array of the log10 of halo mass (Msun/h)
+            magnitude: absolute magnitude threshold
+            redshift:  array of halo redshifts
+        Returns:
+            array of mean number of satellite galaxies
         """
         num_cent = self.number_centrals_mean(log_mass, magnitude, redshift)
 
@@ -245,12 +283,15 @@ class HOD_BGS(HOD):
 
     def number_galaxies_mean(self, log_mass, magnitude, redshift):
         """
-        Returns the average total number of galaxies in haloes, 
-        using the evolving HODs described in Smith et al 2017
-        
-        log_mass  : log10 of the mass of the halo, in Msun/h
-        magnitude : r-band absolute magnitude threshold (at z=0.1)
-        redshift  : redshift of the halo
+        Average total number of galaxies in each halo brighter than
+        some absolute magnitude threshold
+
+        Args:
+            log_mass:  array of the log10 of halo mass (Msun/h)
+            magnitude: absolute magnitude threshold
+            redshift:  array of halo redshifts
+        Returns:
+            array of mean number of galaxies
         """
         return self.number_centrals_mean(log_mass, magnitude, redshift) + \
             self.number_satellites_mean(log_mass, magnitude, redshift)
@@ -258,11 +299,17 @@ class HOD_BGS(HOD):
 
     def get_number_satellites(self, log_mass, redshift):
         """
-        Randomly draw the number of satellite galaxies for each halo
-        from a Poisson distribution
+        Randomly draw the number of satellite galaxies in each halo,
+        brighter than mag_faint, from a Poisson distribution
+
+        Args:
+            log_mass: array of the log10 of halo mass (Msun/h)
+            redshift: array of halo redshifts
+        Returns:
+            array of number of satellite galaxies
         """
         # faint magnitude threshold at each redshift
-        magnitude = lf.magnitude_faint(redshift)
+        magnitude = self.lf.magnitude_faint(redshift)
 
         # mean number of satellites in each halo brighter than the
         # faint magnitude threshold
@@ -275,11 +322,17 @@ class HOD_BGS(HOD):
     def get_magnitude_central(self, log_mass, redshift):
         """
         Use the HODs to draw a random magnitude for each central galaxy
+
+        Args:
+            log_mass: array of the log10 of halo mass (Msun/h)
+            redshift: array of halo redshifts
+        Returns:
+            array of central galaxy magnitudes
         """
         # random number from spline kernel distribution
         x = spline.random(size=len(log_mass))
 
-        # return corresponding central magnitude
+        # return corresponding central magnitudes
         points = np.array(zip(log_mass, redshift, x))
         return self._central_interpolator(points)
     
@@ -287,8 +340,30 @@ class HOD_BGS(HOD):
     def get_magnitude_satellites(self, log_mass, redshift, number_satellites):
         """
         Use the HODs to draw a random magnitude for each satellite galaxy
+
+        Args:
+            log_mass:          array of the log10 of halo mass (Msun/h)
+            redshift:          array of halo redshifts
+            number_satellites: array of number of sateillites in each halo
+        Returns:
+            array of the index of each galaxy's halo in the input arrays
+            array of satellite galaxy magnitudes
         """
-        pass
+        # create arrays of log_mass, redshift and halo_index for galaxies
+        halo_index = np.arange(len(log_mass))
+        halo_index = np.repeat(halo_index, number_satellites)
+        log_mass_satellite = np.repeat(log_mass, number_satellites)
+        redshift_satellite = np.repeat(redshift, number_satellites)
+
+        # uniform random number x
+        # x=1 corresponds to mag_faint
+        # mag -> -infinity as x -> 0
+        log_x = np.log10(np.random.rand(len(log_mass_satellite)))
+
+        # find corresponding satellite magnitudes
+        points = np.array(zip(log_mass_satellite, redshift_satellite, log_x))
+        return halo_index, self._satellite_interpolator(points)
+        
 
 
 
@@ -364,28 +439,45 @@ def test():
     plt.ylim(-2,2.3)
     plt.show()
 
-
-
-    print('RANDOMLY GENERATING MAGNITUDES FOR CENTRAL GALAXIES')
+    
+    print('RANDOMLY GENERATING MAGNITUDES FOR GALAXIES')
     mag = -21
+
     log_mass = np.arange(10,16,0.01)
     z = np.ones(len(log_mass)) * 0.1
     magnitude = np.ones(len(log_mass)) * mag
 
-    num = hod.number_centrals_mean(log_mass, magnitude, z)
-    plt.plot(log_mass, num, label='mean')
+    num_cen = hod.number_centrals_mean(log_mass, magnitude, z)
+    num_sat = hod.number_satellites_mean(log_mass, magnitude, z)
+    plt.plot(log_mass, num_cen, c="b")
+    plt.plot(log_mass, num_sat, c="b")
+    plt.plot(log_mass, num_cen+num_sat, label='mean', c="b")
 
-    num_av = np.zeros(len(log_mass))
-    for i in range(1000):
+    num_av_cen = np.zeros(len(log_mass))
+    num_av_sat = np.zeros(len(log_mass))
+    N = 100
+    for i in range(N):
+        print("REALIZATION", i, "OF", N)
         mags = hod.get_magnitude_central(log_mass, z)
         idx = mags<mag
-        num_av[idx] += 1./1000
+        num_av_cen[idx] += 1./N
 
-    plt.plot(log_mass, num_av, label='random')
+        nsat = hod.get_number_satellites(log_mass, z)
+        halo_idx, mags = hod.get_magnitude_satellites(log_mass, z, nsat)
+        log_mass_sat = log_mass[halo_idx]
+        for j in range(len(log_mass)):
+            idx = np.where(log_mass_sat == log_mass[j])
+            num_av_sat[j] += np.count_nonzero(mags[idx]<mag)/float(N)
+
+    plt.plot(log_mass, num_av_cen, c="r")
+    plt.plot(log_mass, num_av_sat, c="r")
+    plt.plot(log_mass, num_av_cen+num_av_sat, c="r",label='random')
     plt.legend(loc='upper left')
+    plt.yscale("log")
     plt.xlabel('log(M)')
     plt.ylabel('N')
     plt.show()
+
 
 if __name__ == "__main__":
     test()

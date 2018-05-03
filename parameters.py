@@ -12,6 +12,11 @@ output_dir = "output/"
 # apparent magnitude threshold
 mag_faint = 20.0
 
+# lookup tables of central and satellites magnitudes
+# these files will be created if they don't exist
+lookup_central = lookup_dir+"central_magnitudes.npy"
+lookup_satellite = lookup_dir+"satellite_magnitudes.npy"
+
 ### Cosmology ###
 h0     = 0.73
 OmegaM = 0.25

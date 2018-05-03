@@ -32,9 +32,9 @@ class HOD(object):
 
 
 class HOD_BGS(HOD):
-        """
-        HODs used to create the mock catalogue described in Smith et al. 2017
-        """
+    """
+    HODs used to create the mock catalogue described in Smith et al. 2017
+    """
 
     def __init__(self):
         self.mf = MassFunction()
@@ -49,13 +49,10 @@ class HOD_BGS(HOD):
         self.__logM1_interpolator = \
             self.__initialize_mass_interpolator(par.M1_Ls, par.M1_Mt, par.M1_am)
 
-        print("Generating lookup table of central galaxy magnitudes")
         self.__central_interpolator = self.__initialize_central_interpolator()
 
-        print("Generating lookup table of satellite galaxy magnitudes")
         self.__satellite_interpolator = \
                                   self.__initialize_satellite_interpolator()
-        print("Done")
 
 
     def __initialize_slide_factor_interpolator(self):
@@ -90,31 +87,40 @@ class HOD_BGS(HOD):
         # the magnitude of central galaxies as a function of log_mass,
         # z, and random number x from spline kernel distribution
 
-        ### ADD OPTION TO SAVE/READ FILE
-
         # arrays of mass, x, redshift, and 3d array of magnitudes
         # x is the scatter in the central luminosity from the mean
-        log_masses = np.arange(10, 16, 0.1)
-        redshifts = np.arange(0, 1, 0.1)
+        log_masses = np.arange(10, 16, 0.02)
+        redshifts = np.arange(0, 1, 0.02)
         xs = np.arange(-3.5, 3.501, 0.02)
         magnitudes = np.zeros((len(log_masses), len(redshifts), len(xs)))
 
-        # fill in array of magnitudes
-        mags = np.arange(-25, -10, 0.01)
-        arr_ones = np.ones(len(mags), dtype="f")
-        for i in range(len(log_masses)):
-            for j in range(len(redshifts)):
+        try:
+            # try to read 3d array of magnitudes from file
+            magnitudes = np.load(par.lookup_central)
 
-                x = np.sqrt(2) * (log_masses[i]-np.log10(self.Mmin(mags, arr_ones*redshifts[j]))) / self.sigma_logM(mags, arr_ones*redshifts[j])
+            if magnitudes.shape != (len(log_masses), len(redshifts), len(xs)):
+                raise ValueError("Central lookup table has unexpected shape")
 
-                if x[-1] < 3.5: continue
+        except IOError:
+            # file doesn't exist - fill in array of magnitudes
+            print("Generating lookup table of central galaxy magnitudes")
+            mags = np.arange(-25, -10, 0.01)
+            arr_ones = np.ones(len(mags), dtype="f")
+            for i in range(len(log_masses)):
+                for j in range(len(redshifts)):
 
-                # find this in the array xs
-                idx = np.searchsorted(x, xs)
+                    x = np.sqrt(2) * (log_masses[i]-np.log10(self.Mmin(mags, arr_ones*redshifts[j]))) / self.sigma_logM(mags, arr_ones*redshifts[j])
 
-                # interpolate 
-                f = (xs - x[idx-1]) / (x[idx] - x[idx-1])
-                magnitudes[i,j,:] = mags[idx-1] + f*(mags[idx] - mags[idx-1])
+                    if x[-1] < 3.5: continue
+
+                    # find this in the array xs
+                    idx = np.searchsorted(x, xs)
+
+                    # interpolate 
+                    f = (xs - x[idx-1]) / (x[idx] - x[idx-1])
+                    magnitudes[i,j,:] = mags[idx-1] + f*(mags[idx]-mags[idx-1])
+            print("Saving lookup table to file")
+            np.save(par.lookup_central, magnitudes)
 
         # create RegularGridInterpolator object
         return RegularGridInterpolator((log_masses, redshifts, xs),
@@ -125,32 +131,46 @@ class HOD_BGS(HOD):
         # creates a RegularGridInterpolator object used for finding 
         # the magnitude of satellite galaxies as a function of log_mass,
         # z, and random number log_x (x is uniform random between 0 and 1)
-        log_masses = np.arange(10, 16, 0.1)
-        redshifts = np.arange(0, 1, 0.1)
+
+
+        log_masses = np.arange(10, 16, 0.02)
+        redshifts = np.arange(0, 1, 0.02)
         log_xs = np.arange(-12, 0.01, 0.02)
         magnitudes = np.zeros((len(log_masses), len(redshifts), len(log_xs)))
 
-        # fill in array of magnitudes
-        mags = np.arange(-25, -8, 0.01)
-        mag_faint = self.lf.magnitude_faint(redshifts)
-        arr_ones = np.ones(len(mags))
-        for i in range(len(log_masses)):
-            for j in range(len(redshifts)):
-                Nsat = self.number_satellites_mean(arr_ones*log_masses[i], mags,
+        try:
+            # try to read 3d array of magnitudes from file
+            magnitudes = np.load(par.lookup_satellite)
+
+            if magnitudes.shape!=(len(log_masses), len(redshifts), len(log_xs)):
+                raise ValueError("Satellite lookup table has unexpected shape")
+            
+        except IOError:
+            # file doesn't exist - fill in array of magnitudes
+            print("Generating lookup table of satellite galaxy magnitudes")
+
+            mags = np.arange(-25, -8, 0.01)
+            mag_faint = self.lf.magnitude_faint(redshifts)
+            arr_ones = np.ones(len(mags))
+            for i in range(len(log_masses)):
+                for j in range(len(redshifts)):
+                    Nsat = self.number_satellites_mean(arr_ones*log_masses[i], mags,
                                                    arr_ones*redshifts[j])
-                Nsat_faint = self.number_satellites_mean(arr_ones*log_masses[i],
+                    Nsat_faint = self.number_satellites_mean(arr_ones*log_masses[i],
                                    arr_ones*mag_faint[j],arr_ones*redshifts[j])
 
-                log_x = np.log10(Nsat) - np.log10(Nsat_faint)
+                    log_x = np.log10(Nsat) - np.log10(Nsat_faint)
 
-                if log_x[-1] == -np.inf: continue
+                    if log_x[-1] == -np.inf: continue
 
-                # find this in the array log_xs
-                idx = np.searchsorted(log_x, log_xs)
+                    # find this in the array log_xs
+                    idx = np.searchsorted(log_x, log_xs)
 
-                # interpolate 
-                f = (log_xs - log_x[idx-1]) / (log_x[idx] - log_x[idx-1])
-                magnitudes[i,j,:] = mags[idx-1] + f*(mags[idx] - mags[idx-1])
+                    # interpolate 
+                    f = (log_xs - log_x[idx-1]) / (log_x[idx] - log_x[idx-1])
+                    magnitudes[i,j,:] = mags[idx-1] + f*(mags[idx]-mags[idx-1])
+            print("Saving lookup table to file")
+            np.save(par.lookup_satellite, magnitudes)
 
         # create RegularGridInterpolator object
         return RegularGridInterpolator((log_masses, redshifts, log_xs),

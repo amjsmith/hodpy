@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 from __future__ import print_function
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
@@ -132,10 +133,11 @@ class HOD_BGS(HOD):
         # the magnitude of satellite galaxies as a function of log_mass,
         # z, and random number log_x (x is uniform random between 0 and 1)
 
-
+        # arrays of mass, x, redshift, and 3d array of magnitudes
+        # x is the ratio of Nsat(mag,mass)/Nsat(mag_faint,mass)
         log_masses = np.arange(10, 16, 0.02)
         redshifts = np.arange(0, 1, 0.02)
-        log_xs = np.arange(-12, 0.01, 0.02)
+        log_xs = np.arange(-12, 0.01, 0.05)
         magnitudes = np.zeros((len(log_masses), len(redshifts), len(log_xs)))
 
         try:
@@ -169,6 +171,25 @@ class HOD_BGS(HOD):
                     # interpolate 
                     f = (log_xs - log_x[idx-1]) / (log_x[idx] - log_x[idx-1])
                     magnitudes[i,j,:] = mags[idx-1] + f*(mags[idx]-mags[idx-1])
+
+                    # Deal with NaN values
+                    # if NaN for small x but not large x, replace all 
+                    # NaN values with faintest mag
+                    idx = np.isnan(magnitudes[i,j,:])
+                    num_nan = np.count_nonzero(idx)
+                    if num_nan < len(idx) and num_nan>0:
+                        magnitudes[i,j,idx] = \
+                            magnitudes[i,j,np.where(idx)[0][-1]+1]
+                    # if previous mass bin contains all NaN, copy current
+                    # mass bin
+                    if i>0 and np.count_nonzero(np.isnan(magnitudes[i-1,j,:]))\
+                                                ==len(magnitudes[i,j,:]):
+                        magnitudes[i-1,j,:] = magnitudes[i,j,:]
+                    # if all NaN and j>0, copy prev j to here
+                    if j>0 and np.count_nonzero(np.isnan(magnitudes[i,j,:]))\
+                                                ==len(magnitudes[i,j,:]):
+                        magnitudes[i,j,:] = magnitudes[i,j-1,:]
+
             print("Saving lookup table to file")
             np.save(par.lookup_satellite, magnitudes)
 
@@ -439,10 +460,12 @@ class HOD_BGS(HOD):
 
         # find corresponding satellite magnitudes
         points = np.array(zip(log_mass_satellite, redshift_satellite, log_x))
-        return halo_index, self.__satellite_interpolator(points)
-        
-
-
+        return halo_index, self.__satellite_interpolator(points), log_x
+       
+ 
+    def test_magnitude_satellites(self, log_mass, redshift, log_x):
+        points = np.array(zip(log_mass, redshift, log_x))
+        return self.__satellite_interpolator(points)
 
 def test():
     # test plots

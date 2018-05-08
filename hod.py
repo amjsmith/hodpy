@@ -5,6 +5,7 @@ from scipy.interpolate import RegularGridInterpolator
 from luminosity_function import LuminosityFunctionTarget
 from mass_function import MassFunction
 from cosmology import Cosmology
+from k_correction import GAMA_KCorrection
 import parameters as par
 import spline
 
@@ -42,6 +43,7 @@ class HOD_BGS(HOD):
         self.cosmo = Cosmology(par.h0, par.OmegaM, par.OmegaL)
         self.lf = LuminosityFunctionTarget(par.lf_file, par.Phi_star, 
                                            par.M_star, par.alpha, par.P, par.Q)
+        self.kcorr = GAMA_KCorrection()
 
         self.__slide_interpolator =self.__initialize_slide_factor_interpolator()
         self.__logMmin_interpolator = \
@@ -152,7 +154,7 @@ class HOD_BGS(HOD):
             print("Generating lookup table of satellite galaxy magnitudes")
 
             mags = np.arange(-25, -8, 0.01)
-            mag_faint = self.lf.magnitude_faint(redshifts)
+            mag_faint = self.kcorr.magnitude_faint(redshifts)
             arr_ones = np.ones(len(mags))
             for i in range(len(log_masses)):
                 for j in range(len(redshifts)):
@@ -189,6 +191,7 @@ class HOD_BGS(HOD):
                     if j>0 and np.count_nonzero(np.isnan(magnitudes[i,j,:]))\
                                                 ==len(magnitudes[i,j,:]):
                         magnitudes[i,j,:] = magnitudes[i,j-1,:]
+
 
             print("Saving lookup table to file")
             np.save(par.lookup_satellite, magnitudes)
@@ -407,7 +410,7 @@ class HOD_BGS(HOD):
             array of number of satellite galaxies
         """
         # faint magnitude threshold at each redshift
-        magnitude = self.lf.magnitude_faint(redshift)
+        magnitude = self.kcorr.magnitude_faint(redshift)
 
         # mean number of satellites in each halo brighter than the
         # faint magnitude threshold
@@ -460,12 +463,8 @@ class HOD_BGS(HOD):
 
         # find corresponding satellite magnitudes
         points = np.array(zip(log_mass_satellite, redshift_satellite, log_x))
-        return halo_index, self.__satellite_interpolator(points), log_x
+        return halo_index, self.__satellite_interpolator(points)
        
- 
-    def test_magnitude_satellites(self, log_mass, redshift, log_x):
-        points = np.array(zip(log_mass, redshift, log_x))
-        return self.__satellite_interpolator(points)
 
 def test():
     # test plots

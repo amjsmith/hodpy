@@ -1,18 +1,19 @@
+#! /usr/bin/env python
 from __future__ import print_function
 import numpy as np
 from scipy.special import gamma, gammaincc
 from scipy.interpolate import RegularGridInterpolator
-
+from k_correction import GAMA_KCorrection
 
 class LuminosityFunction(object):
+
     def __init__(self):
         pass
 
-    def _initialize_interpolator(self):
-        """
-        Initializes a RegularGridInterpolator for converting number densities
-        at a certain to redshift to the corresponding magnitude threshold
-        """
+    def __initialize_interpolator(self):
+        #Initializes a RegularGridInterpolator for converting number densities
+        #at a certain to redshift to the corresponding magnitude threshold
+        
         # arrays of z and log_n, and empty 2d array magnitudes
         redshifts = np.arange(0, 1, 0.01)
         log_number_densities = np.arange(-12, -0.5, 0.01)
@@ -36,17 +37,10 @@ class LuminosityFunction(object):
         return RegularGridInterpolator((redshifts,log_number_densities),
                         magnitudes, bounds_error=False, fill_value=None)
 
-
     def Phi(self, magnitude, redshift):
-        """
-        Luminosisity function
-        """
         pass
 
     def Phi_cumulative(self, magnitude, redshift):
-        """
-        Cumulative luminosity function
-        """
         pass
 
     def mag2lum(self, magnitude):
@@ -120,7 +114,7 @@ class LuminosityFunctionTabulated(LuminosityFunction):
         self.P = P
         self.Q = Q
 
-        self._lf_interpolator = \
+        self.__lf_interpolator = \
             RegularGridInterpolator((self.magnitude,), self.log_number_density,
                                     bounds_error=False, fill_value=None)
 
@@ -133,7 +127,7 @@ class LuminosityFunctionTabulated(LuminosityFunction):
         magnitude01 = magnitude + self.Q * (redshift - 0.1)
 
         # find interpolated number density at z=0.1
-        log_lf01 = self._lf_interpolator(magnitude01)
+        log_lf01 = self.__lf_interpolator(magnitude01)
 
         # shift back to redshift
         log_lf = log_lf01 + 0.4 * self.P * (redshift - 0.1)
@@ -147,7 +141,8 @@ class LuminosityFunctionTarget(LuminosityFunction):
         self.lf_sdss = LuminosityFunctionTabulated(filename, P, Q)
         self.lf_gama = \
                LuminosityFunctionSchechter(Phi_star, M_star, alpha, P, Q)
-        self._interpolator = self._initialize_interpolator()
+        self._interpolator = \
+                 self._LuminosityFunction__initialize_interpolator()
 
     def transition(self, redshift):
         """
@@ -170,20 +165,6 @@ class LuminosityFunctionTarget(LuminosityFunction):
         return w*lf_sdss + (1-w)*lf_gama
 
 
-    def magnitude_faint(self, redshift):
-        """
-        Minimum absolute magnitude as a function of redshift
-        """
-        ### ADD CODE TO CONVERT par.mag_faint TO MINIMUM ABS MAGNITUDE ###
-
-        # for now, just returns approx mag faint to r=20 from polynomial
-        z=redshift
-        a,b,c,d,e = -3045.98, 2187.512, -562.699, 66.359, 6.07331
-        L = self.mag2lum(-(25./6)*z - 17) * 10**0.2
-        ind = z < 0.2
-        L[ind] = 10**(a*z[ind]**4 + b*z[ind]**3+c*z[ind]**2+d*z[ind] + e - 0.5)
-        return self.lum2mag(L)
-
 
 def test():
     import matplotlib.pyplot as plt
@@ -194,20 +175,12 @@ def test():
     lf_targ = LuminosityFunctionTarget(par.lf_file, par.Phi_star, par.M_star, 
                                        par.alpha, par.P, par.Q)
 
-    #zs = np.arange(0, 1, 0.01)
-    #mag = lf_targ.magnitude_faint(zs)
-    #plt.plot(zs, mag)
-    #plt.show()
-    #exit()
-
     logn = np.log10(lf_targ.Phi_cumulative(mags, z))
     mag = lf_targ.magnitude(10**logn, z)
 
     plt.plot(mags, logn)
     plt.plot(mag, logn, ls="--")
     plt.show()
-
-
 
     lf_gama = LuminosityFunctionSchechter(par.Phi_star, par.M_star, par.alpha, 
                                           par.P, par.Q)

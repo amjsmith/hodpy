@@ -59,7 +59,7 @@ class LuminosityFunction(object):
         """
         Convert number density to magnitude
         """
-        points = np.array(zip(redshift, np.log10(number_density)))
+        points = np.array(list(zip(redshift, np.log10(number_density))))
         return self._interpolator(points)
 
 
@@ -158,7 +158,7 @@ class LuminosityFunctionTarget(LuminosityFunction):
 
     def Phi_cumulative(self, magnitude, redshift):
         w = self.transition(redshift)
-
+        
         lf_sdss = self.lf_sdss.Phi_cumulative(magnitude, redshift)
         lf_gama = self.lf_gama.Phi_cumulative(magnitude, redshift)
 

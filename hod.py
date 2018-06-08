@@ -213,7 +213,7 @@ class HOD_BGS(HOD):
         Returns:
             array of slide factors
         """
-        points = np.array(zip(magnitude, redshift))
+        points = np.array(list(zip(magnitude, redshift)))
         return self.__slide_interpolator(points)
 
 
@@ -434,7 +434,7 @@ class HOD_BGS(HOD):
         x = spline.random(size=len(log_mass))
 
         # return corresponding central magnitudes
-        points = np.array(zip(log_mass, redshift, x))
+        points = np.array(list(zip(log_mass, redshift, x)))
         return self.__central_interpolator(points)
     
 
@@ -462,7 +462,8 @@ class HOD_BGS(HOD):
         log_x = np.log10(np.random.rand(len(log_mass_satellite)))
 
         # find corresponding satellite magnitudes
-        points = np.array(zip(log_mass_satellite, redshift_satellite, log_x))
+        points = np.array(list(zip(log_mass_satellite, redshift_satellite, 
+                                   log_x)))
         return halo_index, self.__satellite_interpolator(points)
        
 

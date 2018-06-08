@@ -128,7 +128,7 @@ class GalaxyCatalogue(Catalogue):
         u = np.random.rand(len(conc))
 
         interpolator = self.__nfw_interpolator()
-        points = np.array(zip(np.log10(conc), np.log10(u)))
+        points = np.array(list(zip(np.log10(conc), np.log10(u))))
         distance[is_sat] = 10**interpolator(points)
         distance[is_sat] *= r200
         return distance
@@ -373,8 +373,8 @@ if __name__ == "__main__":
     haloes.add("zcos", np.array([0.1,]))
     haloes.add("vmax", np.array([100.,]))
     haloes.add("rvmax", np.array([0.05,]))"""
-    haloes.add("ra", np.ones(100)*0.)
-    haloes.add("dec",  np.ones(100)*0.)
+    haloes.add("ra", np.ones(100)*90.)
+    haloes.add("dec",  np.ones(100)*90.)
     haloes.add("mass",  np.ones(100)*1e15)
     haloes.add("zobs",  np.ones(100)*0.101)
     haloes.add("zcos",  np.ones(100)*0.1)

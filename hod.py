@@ -206,7 +206,6 @@ class HOD_BGS(HOD):
         Factor by when the HOD mass parameters (ie Mmin, M0 and M1) must
         be multiplied by in order to produce the number density of
         galaxies as specified by the target luminosity function
-
         Args:
             magnitude: array of absolute magnitude threshold
             redshift:  array of halo redshifts
@@ -222,7 +221,6 @@ class HOD_BGS(HOD):
         HOD parameter Mmin, which is the mass at which a halo has a 50%
         change of containing a central galaxy brighter than the magnitude 
         threshold
-
         Args:
             magnitude: array of absolute magnitude threshold
             redshift:  array of halo redshifts
@@ -246,7 +244,6 @@ class HOD_BGS(HOD):
         """
         HOD parameter M1, which is the mass at which a halo contains an
         average of 1 satellite brighter than the magnitude threshold
-
         Args:
             magnitude: array of absolute magnitude threshold
             redshift:  array of halo redshifts
@@ -270,7 +267,6 @@ class HOD_BGS(HOD):
         """
         HOD parameter M0, which sets the cut-off mass scale for satellites
         satellites
-
         Args:
             magnitude: array of absolute magnitude threshold
             redshift:  array of halo redshifts
@@ -295,7 +291,6 @@ class HOD_BGS(HOD):
         """
         HOD parameter alpha, which sets the slope of the power law for
         satellites
-
         Args:
             magnitude: array of absolute magnitude threshold
             redshift:  array of halo redshifts
@@ -320,7 +315,6 @@ class HOD_BGS(HOD):
         """
         HOD parameter sigma_logM, which sets the amount of scatter in 
         the luminosity of central galaxies
-
         Args:
             magnitude: array of absolute magnitude threshold
             redshift:  array of halo redshifts
@@ -345,7 +339,6 @@ class HOD_BGS(HOD):
         """
         Average number of central galaxies in each halo brighter than
         some absolute magnitude threshold
-
         Args:
             log_mass:  array of the log10 of halo mass (Msun/h)
             magnitude: array of absolute magnitude threshold
@@ -364,7 +357,6 @@ class HOD_BGS(HOD):
         """
         Average number of satellite galaxies in each halo brighter than
         some absolute magnitude threshold
-
         Args:
             log_mass:  array of the log10 of halo mass (Msun/h)
             magnitude: array of absolute magnitude threshold
@@ -386,7 +378,6 @@ class HOD_BGS(HOD):
         """
         Average total number of galaxies in each halo brighter than
         some absolute magnitude threshold
-
         Args:
             log_mass:  array of the log10 of halo mass (Msun/h)
             magnitude: array of absolute magnitude threshold
@@ -402,7 +393,6 @@ class HOD_BGS(HOD):
         """
         Randomly draw the number of satellite galaxies in each halo,
         brighter than mag_faint, from a Poisson distribution
-
         Args:
             log_mass: array of the log10 of halo mass (Msun/h)
             redshift: array of halo redshifts
@@ -423,7 +413,6 @@ class HOD_BGS(HOD):
     def get_magnitude_centrals(self, log_mass, redshift):
         """
         Use the HODs to draw a random magnitude for each central galaxy
-
         Args:
             log_mass: array of the log10 of halo mass (Msun/h)
             redshift: array of halo redshifts
@@ -441,7 +430,6 @@ class HOD_BGS(HOD):
     def get_magnitude_satellites(self, log_mass, redshift, number_satellites):
         """
         Use the HODs to draw a random magnitude for each satellite galaxy
-
         Args:
             log_mass:          array of the log10 of halo mass (Msun/h)
             redshift:          array of halo redshifts

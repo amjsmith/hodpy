@@ -7,39 +7,8 @@ from cosmology import Cosmology
 from catalogue import Catalogue
 
 
-class MXXLCatalogue(Catalogue):
-    """
-    MXXL halo lightcone catalogue
-    """
+class HaloCatalogue(Catalogue):
 
-    def __init__(self, file_name=par.halo_file):
-
-        if file_name is None:
-            self._quantities = {}
-            self.size = 0
-
-        else:
-            # read halo catalogue file
-            halo_cat = h5py.File(file_name, "r")
-
-            self._quantities = {
-                'ra':    self.__read_property(halo_cat, 'ra'),
-                'dec':   self.__read_property(halo_cat, 'dec'),
-                'mass':  self.__read_property(halo_cat, 'M200m') * 1e10,
-                'zobs':  self.__read_property(halo_cat, 'z_obs'),
-                'zcos':  self.__read_property(halo_cat, 'z_cos'),
-                'vmax':  self.__read_property(halo_cat, 'vmax'),
-                'rvmax': self.__read_property(halo_cat, 'rvmax')
-                }
-            halo_cat.close()
-
-            self.size = len(self._quantities['ra'][...])
-
-
-    def __read_property(self, halo_cat, prop):
-        # read property from halo file
-        return halo_cat["Data/"+prop][...]
-    
 
     def get(self, prop):
         """
@@ -73,8 +42,7 @@ class MXXLCatalogue(Catalogue):
         Returns:
             array of R200mean [Mpc/h]
         """
-        cosmo = Cosmology(par.h0, par.OmegaM, par.OmegaL)
-        rho_mean = cosmo.mean_density(self.get("zcos"))
+        rho_mean = self.cosmology.mean_density(self.get("zcos"))
         r200 = (3./(800*np.pi) * self.get("mass") / rho_mean)**(1./3)
         
         if comoving:
@@ -132,6 +100,85 @@ class MXXLCatalogue(Catalogue):
 
         return conc_mod
 
+
+class MXXLCatalogue(HaloCatalogue):
+    """
+    MXXL halo lightcone catalogue
+    """
+
+    def __init__(self, file_name=par.halo_file):
+
+        self.cosmology = Cosmology(par.h0, par.OmegaM, par.OmegaL)
+
+        # read halo catalogue file
+        halo_cat = h5py.File(file_name, "r")
+
+        self._quantities = {
+            'ra':    self.__read_property(halo_cat, 'ra'),
+            'dec':   self.__read_property(halo_cat, 'dec'),
+            'mass':  self.__read_property(halo_cat, 'M200m') * 1e10,
+            'zobs':  self.__read_property(halo_cat, 'z_obs'),
+            'zcos':  self.__read_property(halo_cat, 'z_cos'),
+            'vmax':  self.__read_property(halo_cat, 'vmax'),
+            'rvmax': self.__read_property(halo_cat, 'rvmax')
+            }
+        halo_cat.close()
+
+        self.size = len(self._quantities['ra'][...])
+
+
+    def __read_property(self, halo_cat, prop):
+        # read property from halo file
+        return halo_cat["Data/"+prop][...]
+    
+
+
+class MXXLSnapshot(HaloCatalogue):
+    """
+    MXXL halo catalogue from simulation snapshot
+    """
+
+    def __init__(self, file_name=par.halo_file, snapshot=par.snapshot):
+
+        self.cosmology = Cosmology(par.h0, par.OmegaM, par.OmegaL)
+
+        # read halo catalogue file    
+        halo_cat = h5py.File(file_name, "r")
+
+        self._quantities = {
+            'pos':   self.__read_property(halo_cat,'pos'),
+            'vel':   self.__read_property(halo_cat,'vel'),
+            'mass':  self.__read_property(halo_cat,'M200m') * 1e10,
+            'vmax':  self.__read_property(halo_cat,'vmax'),
+            'rvmax': self.__read_property(halo_cat,'rvmax')
+            }
+
+        halo_cat.close()
+        
+        self.size = len(self._quantities['mass'][...])
+
+        self.add("zcos", np.ones(self.size)*self.snapshot_to_redshift(snapshot))
+
+
+    def __read_property(self, halo_cat, prop):
+        # read property from halo file
+        return halo_cat["Data/%s"%prop][...]
+    
+    
+    def snapshot_to_redshift(self, snapshot):
+        """
+        Returns the redshift corresponding to a snapshot number in
+        the MXXL simulation
+
+        Args:
+            snapshots: integer, the MXXL snapshot number
+        Returns:
+            redshift
+        """
+        #3rd column of the file contains z for snapshots 0 to 63
+        redshifts = np.loadtxt(par.lookup_snapshots, skiprows=1,
+                               delimiter=",")[:,2]
+        return redshifts[snapshot]
 
 
 if __name__ == "__main__":

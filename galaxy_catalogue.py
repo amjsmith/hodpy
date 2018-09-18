@@ -9,8 +9,7 @@ from cosmology import Cosmology
 
 class GalaxyCatalogue(Catalogue):
     """
-    Galaxy catalogue
-
+    Galaxy catalogue for a lightcone
     Args:
         haloes:    halo catalogue
         cosmology: object of the class Cosmology
@@ -25,7 +24,6 @@ class GalaxyCatalogue(Catalogue):
     def get(self, prop):
         """
         Get property from catalogue
-
         Args:
             prop: string of the name of the property
         Returns:
@@ -42,7 +40,6 @@ class GalaxyCatalogue(Catalogue):
     def cut(self, keep):
         """
         Cut catalogue to mask
-
         Args:
             keep: boolean array
         """
@@ -67,7 +64,6 @@ class GalaxyCatalogue(Catalogue):
     def get_halo(self, prop):
         """
         Get property from halo catalogue for each galaxy
-
         Args:
             prop: string of the name of the property
         Returns:
@@ -81,7 +77,6 @@ class GalaxyCatalogue(Catalogue):
         Use hod to randomly generate galaxy absolute magnitudes.
         Adds absolute magnitudes, central index, halo index,
         and central/satellite flag to the catalogue.
-
         Args:
             hod: object of the class HOD
         """
@@ -118,7 +113,7 @@ class GalaxyCatalogue(Catalogue):
         self.add("halo_ind", halo_ind)
 
 
-    def __get_distances(self):
+    def _get_distances(self):
         # gets random distance of satellite to central
         distance = np.zeros(self.size)
 
@@ -133,14 +128,8 @@ class GalaxyCatalogue(Catalogue):
         distance[is_sat] *= r200
         return distance
 
-    def __get_positions(self, distance):
-        # positions satellites randomly at the specified distance from the
-        # central. Returns ra, dec, z
-
-        # 3d position of halo
-        pos_halo = self.equitorial_to_pos3d(self.get_halo("ra"), 
-                                self.get_halo("dec"), self.get_halo("zcos"))
-
+    
+    def _get_relative_positions(self, distance):
         # relative position of galaxy to centre of halo
         pos_rel = np.zeros((self.size,3))
 
@@ -169,12 +158,25 @@ class GalaxyCatalogue(Catalogue):
         for i in range(3):
             pos_rel[is_sat,i] = pos_rel[is_sat,i]*distance[is_sat]/dist[is_sat]
 
+        return pos_rel
+
+    
+    def _get_positions(self, distance):
+        # positions satellites randomly at the specified distance from the
+        # central. Returns ra, dec, z
+
+        # 3d position of halo
+        pos_halo = self.equitorial_to_pos3d(self.get_halo("ra"), 
+                                self.get_halo("dec"), self.get_halo("zcos"))
+        
+        pos_rel = self._get_relative_positions(distance)
+
         ra, dec, z_cos = self.pos3d_to_equitorial(pos_halo + pos_rel)
 
         return ra, dec, z_cos
 
 
-    def __get_velocities(self):
+    def _get_velocities(self):
         # gets random line of sight velocity of each galaxy
 
         # line of sight velocity of halo
@@ -200,13 +202,13 @@ class GalaxyCatalogue(Catalogue):
         to the catalogue.
         """
         # random distance to halo centre
-        distance = self.__get_distances()
+        distance = self._get_distances()
 
         # position around halo centre
-        ra, dec, z_cos = self.__get_positions(distance)
+        ra, dec, z_cos = self._get_positions(distance)
 
         # random line of sight velocity
-        vel_los = self.__get_velocities()
+        vel_los = self._get_velocities()
 
         # use line of sight velocity to get observed redshift
         z_obs = self.vel_to_zobs(z_cos, vel_los)
@@ -254,7 +256,6 @@ class GalaxyCatalogue(Catalogue):
     def add_apparent_magnitude(self, k_correction):
         """
         Add apparent magnitude to catalogue
-
         Args:
             k_correction: object of the class KCorrection
         """
@@ -266,8 +267,7 @@ class GalaxyCatalogue(Catalogue):
 
 class BGSGalaxyCatalogue(GalaxyCatalogue):
     """
-    BGS galaxy catalogue
-
+    BGS galaxy catalogue for a lightcone
     Args:
         haloes: halo catalogue
     """
@@ -277,10 +277,10 @@ class BGSGalaxyCatalogue(GalaxyCatalogue):
         self.haloes = haloes
         self.cosmology = Cosmology(par.h0, par.OmegaM, par.OmegaL)
 
+        
     def add_colours(self, colour):
         """
         Add colours to the galaxy catalogue.
-
         Args:
             colour: object of the class Colour
         """
@@ -301,7 +301,6 @@ class BGSGalaxyCatalogue(GalaxyCatalogue):
         """
         Add apparent magnitude to catalogue, using a colour-dependent
         k-correction
-
         Args:
             k_correction: object of the class GAMA_KCorrection
         """
@@ -388,5 +387,3 @@ if __name__ == "__main__":
 
     cat.add_galaxies(hod)
     cat.position_galaxies()
-
-    

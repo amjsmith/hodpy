@@ -4,7 +4,9 @@
 lookup_dir = "lookup/"
 
 # input halo catalogue
-halo_file = "input/halo_catalogue_small.hdf5"
+halo_file = "input/halo_catalogue_small.hdf5"   # lightcone
+#halo_file = "input/snapshot_58_small.hdf5"       # snapshot
+snapshot = 58                                    # snapshot
 
 # output directory
 output_dir = "output/"
@@ -16,6 +18,10 @@ mag_faint = 20.0
 # these files will be created if they don't exist
 lookup_central = lookup_dir+"central_magnitudes.npy"
 lookup_satellite = lookup_dir+"satellite_magnitudes.npy"
+
+### Simulation ### (Only needed if populating a snapshot)
+lookup_snapshots = lookup_dir+"mxxl_snapshots.dat"
+box_size = 3000 # Mpc/h
 
 ### Cosmology ###
 h0     = 0.73

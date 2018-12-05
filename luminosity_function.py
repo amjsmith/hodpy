@@ -237,7 +237,7 @@ class LuminosityFunctionTarget(LuminosityFunction):
         Function which describes the transition between the SDSS LF
         at low z and the GAMA LF at high z
         """
-        return 1. / (1. + np.exp(-100*(redshift-0.15)))
+        return 1. / (1. + np.exp(100*(redshift-0.15)))
 
     def Phi(self, magnitude, redshift):
         """

@@ -119,7 +119,6 @@ class MXXLCatalogue(HaloCatalogue):
             'mass':  self.__read_property(halo_cat, 'M200m') * 1e10,
             'zobs':  self.__read_property(halo_cat, 'z_obs'),
             'zcos':  self.__read_property(halo_cat, 'z_cos'),
-            'vmax':  self.__read_property(halo_cat, 'vmax'),
             'rvmax': self.__read_property(halo_cat, 'rvmax')
             }
         halo_cat.close()
@@ -149,7 +148,6 @@ class MXXLSnapshot(HaloCatalogue):
             'pos':   self.__read_property(halo_cat,'pos'),
             'vel':   self.__read_property(halo_cat,'vel'),
             'mass':  self.__read_property(halo_cat,'M200m') * 1e10,
-            'vmax':  self.__read_property(halo_cat,'vmax'),
             'rvmax': self.__read_property(halo_cat,'rvmax')
             }
 

@@ -79,6 +79,79 @@ class GalaxyCatalogueSnapshot(GalaxyCatalogue):
         self.add("vel", vel)
         self.add("zcos", np.ones(len(distance))*self.get_halo('zcos')[0])
 
+        
+    def save_to_file(self, file_name, format, properties=None,
+                     halo_properties=None):
+        """
+        Save catalogue to file. The properties to store can be specified
+        using the properties argument. If no properties are specified,
+        the full catalogue will be saved.
+
+        Args:
+            file_name: string of file_name
+            format:    string of file format
+            properties: (optional) list of properties to save
+            halo_properties: (optional) list of halo properties to save
+        """
+
+        directory = '/'.join(file_name.split('/')[:-1])
+        import os
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        if format == "hdf5":
+            import h5py
+
+            f = h5py.File(file_name, "a")
+
+            if properties is None: 
+                # save every property
+                for quantity in self._quantities:
+                    f.create_dataset(quantity, data=self._quantities[quantity],
+                                     compression="gzip")
+            else: 
+                # save specified properties
+                for quantity in properties:
+                    f.create_dataset(quantity, data=self._quantities[quantity],
+                                     compression="gzip")
+
+            if not halo_properties is None:
+                # save specified halo properties
+                for quantity in halo_properties:
+                    f.create_dataset("halo_"+quantity, compression="gzip",
+                                     data=self.get_halo(quantity))
+            f.close()
+
+        elif format == "fits":
+            from astropy.table import Table
+            
+            if properties is None:
+                # save every property
+                t = Table(list(self._quantities.values()), 
+                          names=list(self._quantities.keys()))
+                t.write(file_name, format="fits")
+            else:
+                # save specified properties
+                data = [None] * len(properties)
+                for i, prop in enumerate(properties):
+                    data[i] = self._quantities[prop]
+                t = Table(data, names=properties)
+                t.write(file_name, format="fits")
+
+            if not halo_properties is None:
+                # save specified halo properties
+                data = [None] * len(halo_properties)
+                for i, prop in enumerate(halo_properties):
+                    data[i] = self.get_halo(prop)
+                    halo_properties[i] = "halo_" + halo_properties[i]
+                t = Table(data, names=halo_properties)
+                t.write(file_name, format="fits")
+
+        # can add more file formats...
+
+        else:
+            raise ValueError("Invalid file format")
+
 
 class BGSGalaxyCatalogueSnapshot(GalaxyCatalogueSnapshot):
     """

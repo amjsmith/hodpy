@@ -21,7 +21,7 @@ lookup_satellite = lookup_dir+"satellite_magnitudes.npy"
 
 ### Simulation ### (Only needed if populating a snapshot)
 lookup_snapshots = lookup_dir+"mxxl_snapshots.dat"
-box_size = 3000 # Mpc/h
+box_size = 300 # Mpc/h
 
 ### Cosmology ###
 h0     = 0.73

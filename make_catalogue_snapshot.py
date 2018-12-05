@@ -35,7 +35,8 @@ def main():
     gal_cat.cut(gal_cat.get("abs_mag") <= -20.0)
     
     # save catalogue to file
-    gal_cat.save_to_file(par.output_dir+"cat_snapshot.hdf5", format="hdf5")
+    gal_cat.save_to_file(par.output_dir+"cat_snapshot.hdf5", format="hdf5",
+                         halo_properties=["mass",])
     
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ class LuminosityFunction(object):
         magnitudes = np.zeros((len(redshifts),len(log_number_densities)))
             
         # fill in 2d array of magnitudes
-        mags = np.arange(-25, -10, 0.001)
+        mags = np.arange(-25, 0, 0.001)
         for i in range(len(redshifts)):
             # find number density at each magnitude in mags
             log_ns = np.log10(self.Phi_cumulative(mags, redshifts[i]))

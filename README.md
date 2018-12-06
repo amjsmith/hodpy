@@ -156,9 +156,41 @@ As with the lightcone code, the first time it is run, the code will generate lar
 luminosities. 
 
 
-# The parameter file
+# Parameters
 
 ## parameters.py
+
+This is where various parameters in the code can be set. These parameters are described here.
+
+- `lookup_dir`: Directory in which various lookup files are located (see the next section for details on these files)
+
+- `halo_file`: Location of the input halo lightcone or snapshot file
+
+- `snapshot`: Snapshot number. This is only required when populating a snapshot. The class `MXXL_Snapshot` in 
+`halo_catalogue.py` contains a method for converting the MXXL snapshot number to the corresponding redshift.
+
+- `mag_faint`: Faint apparent magnitude limit. When populating a lightcone, the catalogue is cut to this limit
+at the very end.
+
+- `lookup_central`: Location of lookup table of central galaxy luminosities. If this file already exists, it will be
+read from. If it doesn't exist, this file will be created.
+
+- `lookup_satellite`: Location of lookup table of satellite galaxy luminosities. If this file already exists, it will be
+read from. If it doesn't exist, this file will be created.
+
+- `lookup_snapshots`: Location of lookup table of simulation snapshots and the corresponding redshift. This is only needed
+when populating a snapshot.
+
+- `box_size`: Size of the simulation cubic box, in Mpc/h. This is only needed when populating a snapshot.
+
+- `h0`: Present day Hubble parameter, in units of 100 km/s/Mpc
+
+- `OmegaM`: Mass density parameter
+
+- `OmegaL`: Lambda density parameter
+
+- `lf_file`: Tabulated file of the 
+
 
 
 

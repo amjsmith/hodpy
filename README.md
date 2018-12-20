@@ -11,7 +11,8 @@ http://icc.dur.ac.uk/data/
 https://tao.asvo.org.au/tao/
 
 A small section of the MXXL box at snapshot 58 (corresponding to z=0.116) is also provided in `input/snapshot_58_small.hdf5`.
-The snapshot has been cut to a box that is 300 Mpc/h on each side (0.1% of the volume of the full MXXL box).
+The snapshot has been cut to only the most massive subhaloes in each FOF group, in a box that is 300 Mpc/h on each side 
+(0.1% of the volume of the full MXXL box).
 
 # Populating a lightcone
 
@@ -160,7 +161,8 @@ luminosities.
 
 ## parameters.py
 
-This is where various parameters in the code can be set. These parameters are described here.
+This is where various parameters in the code can be set. These parameters are described here. Input files indicated
+in brackets will be created if they don't exist when running the code.
 
 - `lookup_dir`: Directory in which various lookup files are located (see the next section for details on these files)
 
@@ -172,10 +174,10 @@ This is where various parameters in the code can be set. These parameters are de
 - `mag_faint`: Faint apparent magnitude limit. When populating a lightcone, the catalogue is cut to this limit
 at the very end.
 
-- `lookup_central`: Location of lookup table of central galaxy luminosities. If this file already exists, it will be
+- (`lookup_central`): Location of lookup table of central galaxy luminosities. If this file already exists, it will be
 read from. If it doesn't exist, this file will be created.
 
-- `lookup_satellite`: Location of lookup table of satellite galaxy luminosities. If this file already exists, it will be
+- (`lookup_satellite`): Location of lookup table of satellite galaxy luminosities. If this file already exists, it will be
 read from. If it doesn't exist, this file will be created.
 
 - `lookup_snapshots`: Location of lookup table of simulation snapshots and the corresponding redshift. This is only needed
@@ -183,15 +185,52 @@ when populating a snapshot.
 
 - `box_size`: Size of the simulation cubic box, in Mpc/h. This is only needed when populating a snapshot.
 
+#### Cosmology
+
+The code assumes a flat LCDM cosmology
+
 - `h0`: Present day Hubble parameter, in units of 100 km/s/Mpc
 
 - `OmegaM`: Mass density parameter
 
 - `OmegaL`: Lambda density parameter
 
-- `lf_file`: Tabulated file of the 
+#### Target luminosity function
 
+The following parameters set the shape of the target luminosity function. At low z (z<0.1), the shape is set by the file `lf_file`, while at higher z (z>0.2), it is set by a Schecter function, with a smooth transition between 0.1<z<0.2. 
 
+- (`lf_file`): Tabulated file of the cumulative target luminoisity function at low redshifts. This is the luminosity function at
+z=0.1 predicted from the HODs (i.e. the result of integrating over all masses the halo mass function multiplied by the HOD).
+This transitions to the Blanton SDSS luminosity function at the faint end, and is extrapolated using a power law.
+If this file is not provided, the target luminosity function will be calculated and saved to this file.
+
+- `lf_sdss`: Tabulated file of the Blanton SDSS cumulative luminosity function.
+
+- `Phi_star`: Schechter function normalization (h^3/Mpc^3)
+
+- `M_star`: Schechter function characteristic absoulte magnitude (M - 5logh)
+
+- `alpha`: Schechter function faint end slope
+
+- `P`:  Number density evolution parameter
+
+- `Q`: Magnitude evolution parameter
+
+- `k_corr_file`: File containing the polynomial coefficients of the colour-dependent k-corrections (see Smith+17)
+
+#### Mass function parameters
+
+- `mf_fits_file`: File containing the fits to the simulation mass function, with the same form as the Sheth-Tormen
+mass function, at each simulation snapshot
+
+- `deltacrit_file`: Tabulated file of delta_c(z), in the cosmology of the simulation.
+
+- `sigma_file`: Tabulated file of sigma(M), in the cosmology of the simulation.
+
+#### HOD parameters
+
+- (`slide_file`): File containing the parameters used to evolve the HODs with redshift and reproduce the target luminosity
+function
 
 
 # Other files

@@ -3,13 +3,15 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from sigma import Sigma
 import parameters as par
+from cosmology import Cosmology
 
-class MassFunction(object):
+class MassFunctionMXXL(object):
     
     def __init__(self):
         
         self.sigma = Sigma() #sigma(M)
-
+        self.cosmology = Cosmology(par.h0, par.OmegaM, par.OmegaL)
+        
         # read in MXXL mass function fit parameters
         snap, redshift, A, a, p = \
                    np.loadtxt(par.mf_fits_file, skiprows=1, unpack=True)
@@ -52,19 +54,11 @@ class MassFunction(object):
 
         return mf
 
-def test():
-    import matplotlib.pyplot as plt
-    mf = MassFunction()
+    def number_density(self, log_mass, redshift):
+        '''
+        Number density of haloes
+        '''        
+        mf = self.mass_function(log_mass, redshift)
 
-    log_mass = np.arange(10, 16, 0.1)
-    
-    for z in np.arange(0, 1, 0.1):
-        plt.plot(log_mass, mf.mass_function(log_mass, np.ones(len(log_mass))*z))
-
-    plt.yscale('log')
-
-    plt.show()
-
-if __name__ == '__main__':
-
-    test()
+        return mf * self.cosmology.mean_density(0) / 10**log_mass
+        

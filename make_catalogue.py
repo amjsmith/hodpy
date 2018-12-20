@@ -3,7 +3,7 @@ from __future__ import print_function
 import numpy as np
 from halo_catalogue import MXXLCatalogue
 from galaxy_catalogue import BGSGalaxyCatalogue
-from hod import HOD_BGS
+from hod_bgs import HOD_BGS
 from colour import Colour  
 from k_correction import GAMA_KCorrection
 import parameters as par

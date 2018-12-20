@@ -21,8 +21,6 @@ class Sigma:
 
 
     def sigma(self, log_mass, redshift):
-        
-        print(log_mass, redshift)
 
         # sigma(M, z=0)
         sigma = self._sigma_interpolator(log_mass)

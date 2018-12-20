@@ -87,8 +87,8 @@ class GalaxyCatalogue(Catalogue):
         num_sat = hod.get_number_satellites(self.haloes.get("log_mass"), 
                                              self.haloes.get("zcos"))
         ind_cen, mag_sat = \
-            hod.get_magnitude_satellites(self.haloes.get("log_mass"), 
-                                         self.haloes.get("zcos"), num_sat)
+            hod.get_magnitude_satellites(self.haloes.get("log_mass"), num_sat,
+                                         self.haloes.get("zcos"))
 
         # update size of catalogue
         self.size = len(mag_cen) + len(mag_sat)
@@ -381,79 +381,3 @@ class BGSGalaxyCatalogue(GalaxyCatalogue):
         self.add("app_mag", app_mag)
 
 
-
-
-def test():
-    from cosmology import Cosmology
-    import parameters as par
-    cos = Cosmology(par.h0, par.OmegaM, par.OmegaL)
-
-    from halo_catalogue import MXXLCatalogue
-    halo_cat = MXXLCatalogue()
-    gal_cat = BGSGalaxyCatalogue(halo_cat, cos)
-
-    from hod import HOD_BGS
-    hod = HOD_BGS()
-    gal_cat.add_galaxies(hod)
-
-    print(len(gal_cat.get("abs_mag")), len(gal_cat.get_halo("ra")))
-    print(len(gal_cat.haloes.get("ra")))
-
-    gal_cat.position_galaxies()
-
-    ##gal_cat.cut(gal_cat.get("zcos")<0.1)
-
-    rah, dech = gal_cat.get_halo("ra"), gal_cat.get_halo("dec")
-    zcosh, zobsh = gal_cat.get_halo("zcos"), gal_cat.get_halo("zobs")
-
-    ra, dec = gal_cat.get("ra"), gal_cat.get("dec")
-    zcos, zobs = gal_cat.get("zcos"), gal_cat.get("zobs")
-    ra[ra>100] -= 360
-
-    is_sat = gal_cat.get("is_sat")
-
-    import matplotlib.pyplot as plt
-    plt.scatter(rah, dech, s=3, edgecolor="none")
-    plt.scatter(ra[is_sat], dec[is_sat], s=3, edgecolor="none")
-    plt.show()
-
-    plt.scatter(zcos, zcosh, s=1, edgecolor="none")
-    plt.show()
-    
-    plt.scatter(zobs, zobsh, s=1, edgecolor="none")
-    plt.show()
-
-    plt.scatter(zcosh, ra-rah, s=1, edgecolor="none")
-    plt.show()
-
-    plt.scatter(zcosh, dec-dech, s=1, edgecolor="none")
-    plt.show()
-
-
-if __name__ == "__main__":
-    #test()
-
-
-
-    from halo_catalogue import MXXLCatalogue
-    haloes = MXXLCatalogue(file_name=None)
-    """haloes.add("ra", np.array([0.,]))
-    haloes.add("dec", np.array([0.,]))
-    haloes.add("mass", np.array([5e15,]))
-    haloes.add("zobs", np.array([0.101,]))
-    haloes.add("zcos", np.array([0.1,]))
-    haloes.add("rvmax", np.array([0.05,]))"""
-    haloes.add("ra", np.ones(100)*90.)
-    haloes.add("dec",  np.ones(100)*90.)
-    haloes.add("mass",  np.ones(100)*1e15)
-    haloes.add("zobs",  np.ones(100)*0.101)
-    haloes.add("zcos",  np.ones(100)*0.1)
-    haloes.add("rvmax",  np.ones(100)*0.05)
-
-    cat = BGSGalaxyCatalogue(haloes)
-
-    from hod import HOD_BGS
-    hod = HOD_BGS()
-
-    cat.add_galaxies(hod)
-    cat.position_galaxies()

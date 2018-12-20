@@ -21,7 +21,7 @@ lookup_satellite = lookup_dir+"satellite_magnitudes.npy"
 
 ### Simulation ### (Only needed if populating a snapshot)
 lookup_snapshots = lookup_dir+"mxxl_snapshots.dat"
-box_size = 300 # Mpc/h
+box_size = 3000 # Mpc/h
 
 ### Cosmology ###
 h0     = 0.73
@@ -29,7 +29,8 @@ OmegaM = 0.25
 OmegaL = 0.75
  
 ### Luminosity function ###
-lf_file  = lookup_dir+"sdss_cumulative_lf.dat" # file of cum LF at low z
+lf_file  = lookup_dir+"target_lf.dat" # cumulative target LF at z=0.1
+lf_sdss  = lookup_dir+"sdss_cumulative_lf.dat" # sdss cumulative LF
 Phi_star = 0.94e-2 # Schecheter params at high z
 M_star   = -20.70
 alpha    = -1.23

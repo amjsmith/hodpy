@@ -28,7 +28,7 @@ class LuminosityFunction(object):
             
             # find this number density in the array log_number_densities
             idx = np.searchsorted(log_ns, log_number_densities)
-
+            
             # interpolate to find magnitude at this number density
             f = (log_number_densities - log_ns[idx-1]) / \
                                      (log_ns[idx] - log_ns[idx-1])
@@ -176,9 +176,9 @@ class LuminosityFunctionTabulated(LuminosityFunction):
         Q: magnitude evolution parameter
     """
     def __init__(self, filename, P, Q):
+        
         self.magnitude, self.log_number_density = \
                               np.loadtxt(filename, unpack=True)
-
         self.P = P
         self.Q = Q
 
@@ -237,7 +237,7 @@ class LuminosityFunctionTarget(LuminosityFunction):
         Function which describes the transition between the SDSS LF
         at low z and the GAMA LF at high z
         """
-        return 1. / (1. + np.exp(100*(redshift-0.15)))
+        return 1. / (1. + np.exp(120*(redshift-0.15)))
 
     def Phi(self, magnitude, redshift):
         """
@@ -270,72 +270,90 @@ class LuminosityFunctionTarget(LuminosityFunction):
 
         lf_sdss = self.lf_sdss.Phi_cumulative(magnitude, redshift)
         lf_gama = self.lf_gama.Phi_cumulative(magnitude, redshift)
-
+        
         return w*lf_sdss + (1-w)*lf_gama
 
 
-
-def test():
-    import matplotlib.pyplot as plt
-    import parameters as par
-
-    mags = np.arange(0,-25,-0.001)
+class LuminosityFunctionTargetBGS(LuminosityFunctionTarget):
+    """
+    Class used to calculate the target luminosity function at z=0.1,
+    used to create the BGS mock catalogue. This is the result of integrating the
+    halo mass function multiplied by the HOD. The resulting LF smoothly
+    transitions to the Blanton SDSS LF at the faint end, then is
+    extrapolated as a power law.
+    """
     
-    z = np.ones(len(mags))* 0.0005
-    lf_targ = LuminosityFunctionTarget(par.lf_file, par.Phi_star, par.M_star, 
-                                       par.alpha, par.P, par.Q)
+    def __init__(self):
 
-    logn = np.log10(lf_targ.Phi_cumulative(mags, z))
-    mag = lf_targ.magnitude(10**logn, z)
-    
-    plt.plot(mags, logn)
-    plt.plot(mag, logn, ls="--")
-    plt.show()
-    
-    lf_gama = LuminosityFunctionSchechter(par.Phi_star, par.M_star, par.alpha, 
-                                          par.P, par.Q)
-    lf_sdss = LuminosityFunctionTabulated(par.lf_file, par.P, par.Q)
-    lf_targ = LuminosityFunctionTarget(par.lf_file, par.Phi_star, par.M_star, 
-                                       par.alpha, par.P, par.Q)
-    
-    for z in np.arange(0, 0.26, 0.025):
+        import parameters as par
+        self.par=par
         
-        phi = lf_sdss.Phi_cumulative(mags, z)
-        plt.plot(mags, phi, c="b")
+        try:
+            self.lf_sdss = LuminosityFunctionTabulated(par.lf_file,par.P,par.Q)
+        except IOError:
+            self.lf_sdss = self.__initialize_target_lf()
+            
+        self.lf_gama = LuminosityFunctionSchechter(par.Phi_star, par.M_star,
+                                                   par.alpha, par.P, par.Q)
+        self._interpolator = \
+                 self._LuminosityFunction__initialize_interpolator()
 
-        phi = lf_gama.Phi_cumulative(mags, z)
-        plt.plot(mags, phi, c="g")
-
-        phi = lf_targ.Phi_cumulative(mags, z)
-        plt.plot(mags, phi, c="r", ls="--")
         
-        plt.yscale("log")
-        plt.title("z = %.2f"%z)
-        plt.xlabel("mag")
-        plt.ylabel("cumulative LF")
-        plt.xlim(-18, -23)
-        plt.ylim(1e-6, 3e-2)
-        plt.show()
+    def __initialize_target_lf(self):
+        # Create a file of the z=0.1 target LF
+
+        print("Calculating target luminosity function")
         
+        from hod_bgs import HOD_5param
+        hod = HOD_5param()
+
+        # array of magnitudes and corresponding number densities
+        mags = np.arange(-16, -24, -0.1)
+        ns = np.zeros(len(mags))
+
+        # loop through each magnitude
+        for i in range(len(mags)):
+            f = np.array([1.0,]) # HOD 'slide factor', set to 1
+            z = np.array([0.1,])
+            mag = np.array([mags[i],])
+            ns[i] = hod.get_n_HOD(mag,z,f) #cumulative LF
+            
+        # convert to differential LF
+        mag = (mags[1:] + mags[:-1]) / 2.
+        n = (ns[:-1] - ns[1:]) / 0.1
         
-        phi = lf_sdss.Phi(mags, z)
-        plt.plot(mags, phi, c="b")
+        # do a spline fit to the differential LF
+        mags = np.arange(-10, -25.0000001, -0.001)[::-1]
+        zs = np.ones(len(mags)) * 0.1
 
-        phi = lf_gama.Phi(mags, z)
-        plt.plot(mags, phi, c="g")
-
-        phi = lf_targ.Phi(mags, z)
-        plt.plot(mags, phi, c="r", ls="--")
-
-        plt.yscale("log")
-        plt.title("z = %.2f"%z)
-        plt.xlabel("mag")
-        plt.ylabel("cumulative LF")
-        plt.xlim(-18, -23)
-        plt.ylim(1e-6, 3e-2)
-        plt.show()
+        from scipy.interpolate import splrep, splev
+        from scipy.optimize import curve_fit
+        tck = splrep(mag[::-1], np.log10(n)[::-1])
+        ns = 10**splev(mags, tck)
         
+        # transition to blanton at the faint end
+        lf_sdss = LuminosityFunctionTabulated(self.par.lf_sdss, self.par.P,
+                                              self.par.Q)
+        ns_sdss = lf_sdss.Phi(mags, zs)
+        T =  1. / (1. + np.exp(5*(mags+19))) #transition around mag -19
+        ns = ns*T + ns_sdss*(1-T)
 
+        # power law fit to the faint end
+        def line(x, a, b):
+            return a*x + b
+        keep = np.logical_and(mags<-16.3, mags>-19.5)
+        popt, pcov = curve_fit(line, mags[keep], np.log10(ns[keep]))
+        ns_line = 10**line(mags, *popt)
+        T =  1. / (1. + np.exp(5*(mags+17))) #transition around mag -17
+        ns = ns*T + ns_line*(1-T)
 
-if __name__ == "__main__":
-    test()
+        # convert back to cumulative LF
+        data = np.zeros((len(mags),2))
+        data[:,0] = mags + 0.0005
+        data[:,1] = np.log10(np.cumsum(ns*0.001))
+
+        # save to file
+        np.savetxt(self.par.lf_file, data)
+
+        return LuminosityFunctionTabulated(self.par.lf_file, self.par.P,
+                                           self.par.Q)

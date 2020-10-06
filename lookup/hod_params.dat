@@ -1,0 +1,13 @@
+# Fits to the HOD parameters at z=0.1 from Smith 2017 as a function of magnitude
+# 
+# Mmin_Ls,      Mmin_Mt,        Mmin_am,        -
+# M1_Ls,        M1_Mt,          M1_am,          -
+# M0_A,         M0_B            -               -
+# alpha_A,      alpha_B,        alpha_C,        -
+# sigma_A,      sigma_B,        sigma_C,        sigma_D
+#
+3.91841775e+09, 3.06648452e+11, 2.57628181e-01, 0
+3.70558341e+09, 4.77678420e+12, 3.05963831e-01, 0
+1.78353177,     -5.98024172,    0,              0
+0.0982841,      80.27598,       10.0,           0
+0.02583643,     0.68126852,     21.05,          2.5

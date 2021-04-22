@@ -455,7 +455,7 @@ class HOD_BGS(HOD):
         magnitude_z0 = self.lf.magnitude(n, np.ones(len(n))*0.1)
 
         # find sigma_logM
-        sigma = sigma_function(magnitude, self.sigma_A, self.sigma_B, self.sigma_C, self.sigma_D)
+        sigma = sigma_function(magnitude_z0, self.sigma_A, self.sigma_B, self.sigma_C, self.sigma_D)
 
         # sigma_logM is kept fixed with redshift
         return sigma

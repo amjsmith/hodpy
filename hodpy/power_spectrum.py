@@ -3,7 +3,7 @@ import numpy as np
 from scipy.integrate import simps, quad
 from scipy.interpolate import splrep, splev
 from scipy.optimize import minimize
-from nbodykit.lab import cosmology as nbodykit_cosmology
+from cosmoprimo import Fourier
 
 from hodpy.cosmology import Cosmology
 
@@ -12,14 +12,18 @@ class PowerSpectrum(object):
     Class containing the linear power spectrum and useful methods
 
     Args:
-        cosmo: instance of hodpy.cosmology.Cosmology class
+        filename: Tabulated file of linear P(k) at z=0
+        h0:       Hubble parameter at z=0, in units [100 km/s/Mpc]
+        OmegaM:   Omega matter at z=0
     """
     def __init__(self, cosmo):
         
         self.cosmo = cosmo   # this is my cosmology class
-        self.__p_lin = nbodykit_cosmology.LinearPower(cosmo.cosmo_nbodykit, redshift=0, transfer="CLASS")
         
-        self.__k = 10**np.arange(-6,6,0.01)
+        fo = Fourier(self.cosmo.cosmo_cosmoprimo, engine='class')
+        self.__p_lin = fo.pk_interpolator()
+        
+        self.__k = 10**np.arange(-6,2,0.01)
         self.__P = self.P_lin(self.__k, z=0)
         self.__tck = self.__get_sigma_spline() #spline fit to sigma(M,z=0)
 
@@ -34,7 +38,7 @@ class PowerSpectrum(object):
         Returns:
             array of linear power spectrum in units [Mpc/h]^-3
         """
-        return self.__p_lin(k) * self.cosmo.growth_factor(z)**2
+        return self.__p_lin(k, z=0) * self.cosmo.growth_factor(z)**2
 
     
     def Delta2_lin(self, k, z):
@@ -186,6 +190,3 @@ class PowerSpectrum(object):
             delta_c
         """
         return 1.686 / self.cosmo.growth_factor(z)
-
-    
-    

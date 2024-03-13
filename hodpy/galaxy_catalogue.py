@@ -166,12 +166,12 @@ class GalaxyCatalogue(Catalogue):
         # central. Returns ra, dec, z
 
         # 3d position of halo
-        pos_halo = self.equitorial_to_pos3d(self.get_halo("ra"), 
+        pos_halo = self.equatorial_to_pos3d(self.get_halo("ra"), 
                                 self.get_halo("dec"), self.get_halo("zcos"))
         
         pos_rel = self._get_relative_positions(distance)
 
-        ra, dec, z_cos = self.pos3d_to_equitorial(pos_halo + pos_rel)
+        ra, dec, z_cos = self.pos3d_to_equatorial(pos_halo + pos_rel)
 
         return ra, dec, z_cos
 

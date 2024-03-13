@@ -40,8 +40,8 @@ path = get_lookup_dir()
 
 
 # k-corrections
-kcorr_file_bgs = path+'bgs/jmext_kcorr_{}_{}band_z01.dat' # for magnitudes
-kcorr_gmr_bgs = path+'bgs/gr_lookup_{}_{}.hdf5'           # for g-r colours
+kcorr_file_bgs = path+'/bgs/jmext_kcorr_{}_{}band_z01.dat' # for magnitudes
+kcorr_gmr_bgs = path+'/bgs/gr_lookup_{}_{}.hdf5'           # for g-r colours
 
 
 

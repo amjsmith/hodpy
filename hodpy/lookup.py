@@ -39,11 +39,12 @@ path = get_lookup_dir()
 ######### File locations for AbacusSummit lightcone ##########
 
 
-# k-corrections
+# BGS k-corrections
 kcorr_file_bgs = path+'/bgs/jmext_kcorr_{}_{}band_z01.dat' # for magnitudes
-kcorr_gmr_bgs = path+'/bgs/gr_lookup_{}_{}.hdf5'           # for g-r colours
+kcorr_gmr_bgs = path+'/bgs/gmr_lookup_{}_{}.hdf5'           # for g-r colours
 
-
+# BGS g-r colour distribution fits
+colour_fits = path+'/bgs/gmr_colour_fits_{}.hdf5'
 
 
 

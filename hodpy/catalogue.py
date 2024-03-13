@@ -50,7 +50,7 @@ class Catalogue(object):
         self.size = np.count_nonzero(keep)
 
 
-    def equitorial_to_pos3d(self, ra, dec, z):
+    def equatorial_to_pos3d(self, ra, dec, z):
         """
         Convert ra, dec, z to 3d cartesian coordinates
 
@@ -76,7 +76,7 @@ class Catalogue(object):
         return pos
 
 
-    def pos3d_to_equitorial(self, pos):
+    def pos3d_to_equatorial(self, pos):
         """
         Convert 3d cartesian coordinates to ra, dec, z
 

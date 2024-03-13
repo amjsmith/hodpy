@@ -125,7 +125,7 @@ class Catalogue(object):
 
     def zobs_to_vel(self, z_cos, z_obs):
         """
-        Convert line of sight velocity to observed redshift
+        Convert observed redshift to line of sight velocity
 
         Args:
             z_cos: array of cosmological redshift
@@ -135,6 +135,31 @@ class Catalogue(object):
         """
         v_los = 3e5 * ((1. + z_obs)/(1. + z_cos) - 1)
         return v_los
+
+
+    def vel_to_vlos(self, pos, vel):
+        """
+        Projects velocity vector along line of sight, with observer positioned at the origin
+
+        Args:
+            pos: 2d array of comoving position vectors [Mpc/h]
+            vel: 2d array of velocity vectors [km/s]
+        Returns:
+            array of line of sight velocity [km/s]
+        """
+        # comoving distance to each object
+        distance = np.sum(pos**2, axis=1)**0.5
+
+        # normalize postion vectors
+        pos_norm = pos.copy()
+        for i in range(3):
+            pos_norm[:,i] = pos_norm[:,i] / distance
+
+        # project velocity along position vectors
+        v_los = np.sum(pos_norm*vel,axis=1)
+
+        return v_los
+
 
 
     def save_to_file(self, file_name, format, properties=None):

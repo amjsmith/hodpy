@@ -1,8 +1,10 @@
 #! /usr/bin/env python
 import numpy as np
 import h5py
+from abacusnbody.data.compaso_halo_catalog import CompaSOHaloCatalog
 
 from hodpy.cosmology import CosmologyMXXL
+from hodpy.cosmology import CosmologyAbacus
 from hodpy.catalogue import Catalogue
 from hodpy import lookup
 
@@ -184,4 +186,49 @@ class MXXLSnapshot(HaloCatalogue):
             redshift
         """
         return self.snapshot_redshifts[snapshot]
+        
+
+        
+class AbacusCatalogue(HaloCatalogue):
+	"""
+	AbacusSummit halo lightcone catalogue - work in progress
+	"""
+
+	def __init__(self, file_name, cosmo):
+
+        	self.cosmology = CosmologyAbacus(cosmo)
+
+		# read halo catalogue file
+        	halo_cat = CompaSOHaloCatalog(file_name, cleaned=True, 
+                                  fields=["pos_interp", "vel_interp", "", 'rvcirc_max_L2com'])
+                                  
+                halos = cat.halos
+                                  
+                lc_cat = Catalogue(self.cosmology)
+                
+                ra,dec,z = 
+
+
+        	self._quantities = {
+            	'ra':    self.__read_property(halo_cat, 'ra'),
+            	'dec':   self.__read_property(halo_cat, 'dec'),
+            	'mass':  self.__read_property(halo_cat, 'M200m') * 1e10,
+            	'zobs':  self.__read_property(halo_cat, 'z_obs'),
+            	'zcos':  self.__read_property(halo_cat, 'z_cos'),
+            	'rvmax': self.__read_property(halo_cat, 'rvmax')
+            	}
+        	halo_cat.close()
+
+        	self.size = len(self._quantities['ra'][...])
+
+
+    	def __read_property(self, halo_cat, prop):
+        	# read property from halo file
+        	return halo_cat["Data/"+prop][...]
+
+
+
+
+
+
 

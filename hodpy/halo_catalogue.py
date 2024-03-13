@@ -200,31 +200,37 @@ class AbacusCatalogue(HaloCatalogue):
 
 		# read halo catalogue file
         	halo_cat = CompaSOHaloCatalog(file_name, cleaned=True, 
-                                  fields=["pos_interp", "vel_interp", "", 'rvcirc_max_L2com'])
-                                  
-                halos = cat.halos
+                                  fields=['N_interp', 'pos_avg', 'vel_avg', 'rvcirc_max_L2com'])
+                
+                # get halos             
+                halos = halo_cat.halos
+                
+                # remove empty halos
+                filled = halos['N_interp']>0
+                halos = halos[filled]
                                   
                 lc_cat = Catalogue(self.cosmology)
                 
-                ra,dec,z = 
+                # get ra, dec coordinates and redshifts
+                ra,dec,z_cos = lc_cat.pos3d_to_equatorial(halos['pos_avg'])  # check if redshift agree with redshift_interp
+                
+                vlos = lc_cat.vel_to_vlos(halos["pos_avg"], halos["vel_avg"])
+                z_obs = lc_cat.vel_to_zobs(z_cos, v_los)
 
+		# get mass of halos
+		Mpart = halo_cat.header['ParticleMassHMsun']
+		halo_mass = cat.halos['N_interp']*Mpart
 
         	self._quantities = {
-            	'ra':    self.__read_property(halo_cat, 'ra'),
-            	'dec':   self.__read_property(halo_cat, 'dec'),
-            	'mass':  self.__read_property(halo_cat, 'M200m') * 1e10,
-            	'zobs':  self.__read_property(halo_cat, 'z_obs'),
-            	'zcos':  self.__read_property(halo_cat, 'z_cos'),
-            	'rvmax': self.__read_property(halo_cat, 'rvmax')
+            	'ra':    ra,
+            	'dec':   dec,
+            	'mass':  halo_mass) * 1e10,
+            	'zobs':  z_obs,
+            	'zcos':  z_cos,
+            	'rvmax': halos['rvcirc_max_L2com'])
             	}
-        	halo_cat.close()
 
-        	self.size = len(self._quantities['ra'][...])
-
-
-    	def __read_property(self, halo_cat, prop):
-        	# read property from halo file
-        	return halo_cat["Data/"+prop][...]
+        	self.size = len(self._quantities['ra'])
 
 
 

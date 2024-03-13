@@ -15,7 +15,7 @@ class KCorrection(object):
     def apparent_magnitude(self, absolute_magnitude, redshift):
         pass
 
-    def absoulte_magnitude(self, apparent_magnitude, redshift):
+    def absolute_magnitude(self, apparent_magnitude, redshift):
         pass
 
     def magnitude_faint(self, redshift):
@@ -26,7 +26,7 @@ class KCorrection(object):
 
 
 class DESI_KCorrection(object):
-    def __init__(self, band, photsys, file='jmext', z0=0.1, kind="cubic"):
+    def __init__(self, band, photsys, z0=0.1, kind="cubic"):
         """
         Colour-dependent polynomial fit to the FSF DESI K-corrections, 
         used to convert between SDSS r-band Petrosian apparent magnitudes, and rest 
@@ -35,28 +35,12 @@ class DESI_KCorrection(object):
         Args:
             band: band pass, e.g. 'r'
             photsys: photometric region, 'N' or 'S'
-            file: k-correction file, default is 'jmext'
-            directory: directory of k-correction file, default is current directory
             [z0]: reference redshift. Default value is z0=0.1
             [kind]: type of interpolation between colour bins,
                   e.g. "linear", "cubic". Default is "cubic"
         """
-        
-        import os
-        
-        raw_dir = directory
-        
-        if file == 'ajs':
-            k_corr_file = raw_dir + 'ajs_kcorr_{}band_z01.dat'.format(band.lower())
-                 
-        elif file == 'jmext':
-            k_corr_file = raw_dir + 'jmext_kcorr_{}_{}band_z01.dat'.format(photsys.upper(), band.lower())
-        
-        elif file == 'jmextcol':
-            k_corr_file = raw_dir + 'jmextcol_kcorr_{}_{}band_z01.dat'.format(photsys.upper(), band.lower())
-            
-        else:
-            print('FILE NOT SUPPORTED.')
+    
+        k_corr_file = lookup.kcorr_file_bgs.format(photsys.upper(), band.lower())
                     
         # read file of parameters of polynomial fit to k-correction
         # polynomial k-correction is of the form
@@ -150,45 +134,8 @@ class DESI_KCorrection(object):
         colour_clipped = np.clip(colour, self.colour_min, self.colour_max)
         return self.__Y_interpolator(colour_clipped)
 
-
-    def restgmr(self, redshift, obsframe_colour, median=False):
-        """
-        Polynomial fit to the FSF
-        rest-frame colours for 0.01<z<0.6
-        The rest-frame colour is extrapolated linearly for z>0.6
-
-        Args:
-            redshift: array of redshifts
-            observer colour:   array of ^0.1(g-r)__0 colour
-        Returns:
-            array of rest-frame colours.
-        """
-        restgmr   = np.zeros(len(redshift))
-        idx = redshift <= 0.6
         
-        if median:
-            obsframe_colour = np.copy(obsframe_colour)
-            
-            # Fig. 13 of https://arxiv.org/pdf/1701.06581.pdf
-            # TODO: Remind myself what is happening here.
-            obsframe_colour = 0.603 * np.ones_like(obsframe_colour)
-
-        restgmr[idx] = self.__A(obsframe_colour[idx])*(redshift[idx]-self.z0)**6 + \
-                 self.__B(obsframe_colour[idx])*(redshift[idx]-self.z0)**5 + \
-                 self.__C(obsframe_colour[idx])*(redshift[idx]-self.z0)**4 + \
-                 self.__D(obsframe_colour[idx])*(redshift[idx]-self.z0)**3 + \
-                 self.__E(obsframe_colour[idx])*(redshift[idx]-self.z0)**2 + \
-                 self.__F(obsframe_colour[idx])*(redshift[idx]-self.z0)**1 + \
-                 self.__G(obsframe_colour[idx])
-
-        idx = redshift > 0.6
-        
-        restgmr[idx] = self.__X(obsframe_colour[idx])*redshift[idx] + self.__Y(obsframe_colour[idx])
-        
-        return  restgmr    
-
-        
-    def k(self, redshift, restframe_colour, median=False):
+    def k(self, redshift, restframe_colour):
         """
         Polynomial fit to the DESI
         K-correction for z<0.6
@@ -196,18 +143,12 @@ class DESI_KCorrection(object):
 
         Args:
             redshift: array of redshifts
-            colour:   array of ^0.1(g-r) colour
+            restframe_colour:   array of ^0.1(g-r) colour
         Returns:
             array of K-corrections
         """
         K   = np.zeros(len(redshift))
         idx = redshift <= 0.6
-        
-        if median:
-            restframe_colour = np.copy(restframe_colour)
-            
-            # Fig. 13 of https://arxiv.org/pdf/1701.06581.pdf            
-            restframe_colour = 0.603 * np.ones_like(restframe_colour)
 
         K[idx] = self.__A(restframe_colour[idx])*(redshift[idx]-self.z0)**6 + \
                  self.__B(restframe_colour[idx])*(redshift[idx]-self.z0)**5 + \
@@ -223,41 +164,40 @@ class DESI_KCorrection(object):
         
         return  K    
     
-    def k_nonnative_zref(self, refz, redshift, restframe_colour, median=False):
+    def k_nonnative_zref(self, refz, redshift, restframe_colour):
+        """
+        Returns the k-correction at any specified reference redshift
+
+        Args:
+            refz: reference redshift
+            redshift: array of redshifts
+            restframe_colour: array of ^0.1(g-r) colour
+        Returns:
+            array of K-corrections
+        """
         refzs = refz * np.ones_like(redshift)
         
-        return  self.k(redshift, restframe_colour, median=median) - self.k(refzs, restframe_colour, median=median) - 2.5 * np.log10(1. + refz)
+        return  self.k(redshift, restframe_colour) - self.k(refzs, restframe_colour) - 2.5 * np.log10(1. + refz)
 
-    def rest_gmr_index(self, rest_gmr, kcoeff=False):
-        bins = np.array([-100., 0.18, 0.35, 0.52, 0.69, 0.86, 1.03, 100.])
-        idx  = np.digitize(rest_gmr, bins=bins)
-
-        '''
-        if kcoeff==True:
-            for i in enumerate(rest_gmr):
-                ddict = {i:{col_med, A[0], B[0], C[0], D[0]}}
-        '''
-
-        return idx
 
     
 class DESI_KCorrection_color(object):
-    def __init__(self, photsys, directory=""):
+    def __init__(self, photsys):
         """
         Apply k-corrections for converting between the observed DESI g-r colours
         and the rest-frame colours in the SDSS bands at z=0.1.
         
         Args:
             photsys: photometric region, 'N' or 'S'
-            directory: directory of k-correction file, default is current directory
         """
+        
         # lookup table for getting rest-frame colours
-        self.__xedges_rest, self.__yedges_rest, self.__H_rest = \
-                                self.__read_table(directory+'gr_lookup_%s_rest.hdf5'%photsys)
+        kcorr_file_rest = lookup.kcorr_gmr_bgs.format(photsys.upper(), 'rest')
+        self.__xedges_rest, self.__yedges_rest, self.__H_rest = self.__read_table(kcorr_file_rest)
         
         # lookup table for getting observer-frame colours
-        self.__xedges_obs, self.__yedges_obs, self.__H_obs = \
-                                self.__read_table(directory+'gr_lookup_%s_obs.hdf5'%photsys)
+        kcorr_file_obs  = lookup.kcorr_gmr_bgs.format(photsys.upper(), 'obs')
+        self.__xedges_obs, self.__yedges_obs, self.__H_obs = self.__read_table(kcorr_file_obs)
         
         # grids for interpolation
         self.__grid_rest = self.__get_grid(self.__xedges_rest, self.__yedges_rest, self.__H_rest)
@@ -278,6 +218,7 @@ class DESI_KCorrection_color(object):
         xbin_cen = (xbins[1:] + xbins[:-1])/2.
         ybin_cen = (ybins[1:] + ybins[:-1])/2.
         return RegularGridInterpolator((xbin_cen, ybin_cen), np.asarray(H))
+
     
     def rest_frame_colour(self, redshift, colour_obs, interp=True):
         """
@@ -287,7 +228,7 @@ class DESI_KCorrection_color(object):
         Args:
             redshift: array of galaxy redshifts
             colour_obs: array of observer-frame colours
-            interp: use interpolation. Default is True
+            [interp]: use interpolation. Default is True
         Returns:
             array of rest-frame colour
         """
@@ -315,7 +256,7 @@ class DESI_KCorrection_color(object):
         Args:
             redshift: array of galaxy redshifts
             colour_rest: array of rest-frame colours
-            interp: use interpolation. Default is True
+            [interp]: use interpolation. Default is True
         Returns:
             array of observer-frame colour
         """

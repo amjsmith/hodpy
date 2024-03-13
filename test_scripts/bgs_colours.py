@@ -34,4 +34,6 @@ plt.legend(loc='upper right').draw_frame(False)
 
 plt.ylim(0,1.2)
 
+plt.xlabel('Mr')
+
 plt.show()

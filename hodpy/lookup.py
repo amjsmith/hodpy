@@ -13,7 +13,7 @@ def get_lookup_dir():
     return "/".join(path)
 
 
-def read_hod_param_file(hod_param_file):
+def read_hod_param_file_mxxl(hod_param_file):
     """
     Read the MXXL HOD parameter file
     """
@@ -27,17 +27,30 @@ def read_hod_param_file(hod_param_file):
             alpha_A, alpha_B, alpha_C, sigma_A, sigma_B, sigma_C, sigma_D
 
 
-def read_hod_param_file(hod_param_file):
+def read_hod_param_file_abacus(hod_param_file):
     """
-    Read the AbacusSummit HOD parameter file
+    Read the HOD parameter file
     """
-    return
+    params = np.loadtxt(hod_param_file)
+    
+    Mmin_A, Mmin_B, Mmin_C, Mmin_D, \
+    sigma_A, sigma_B, sigma_C, sigma_D, \
+    M0_A, M0_B, \
+    M1_A, M1_B, M1_C, M1_D, \
+    alpha_A, alpha_B, alpha_C = params
+    
+    return Mmin_A, Mmin_B, Mmin_C, Mmin_D, sigma_A, sigma_B, sigma_C, sigma_D, \
+           M0_A, M0_B, M1_A, M1_B, M1_C, M1_D, alpha_A, alpha_B, alpha_C
 
 path = get_lookup_dir()
 
 
 ######### File locations for AbacusSummit lightcone ##########
 
+
+# HOD parameters for BGS mock
+abacus_hod_parameters    = path+'/abacus/hod_fits_c000_ph000.txt'
+abacus_hod_slide_factors = path+'/abacus/slide_factors.dat' # will be created if doesn't exist
 
 # BGS k-corrections
 kcorr_file_bgs = path+'/bgs/jmext_kcorr_{}_{}band_z01.dat' # for magnitudes

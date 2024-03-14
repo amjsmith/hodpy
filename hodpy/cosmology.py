@@ -8,6 +8,9 @@ from cosmoprimo import Cosmology
 class Cosmology(object):
     """
     Class containing useful cosmology methods. Assumes flat LCDM Universe.
+    
+    For specific simulation cosmologies, use the classes provided, e.g.
+    CosmologyAbacus for the AbacusSummit simulation cosmologies.
 
     Args:
         cosmo: cosmoprimo cosmology object
@@ -32,6 +35,14 @@ class Cosmology(object):
 
     
     def H(self, redshift):
+        """
+        Hubble parameter as a function of redshift
+
+        Args:
+            redshift: array of redshift
+        Returns:
+            array of H in units [km/s/Mpc]
+        """
         return 100 * self.h0 * self.cosmo_cosmoprimo.efunc(redshift)
     
 
@@ -132,7 +143,9 @@ class Cosmology(object):
     
 
 class CosmologyMXXL(Cosmology):
-    
+    """
+    MXXL simulation cosmology
+    """
     def __init__(self):
         
         cosmo_cosmoprimo = Cosmology(h=0.73, Omega_cdm=0.25-0.045, Omega_b=0.045,
@@ -141,7 +154,9 @@ class CosmologyMXXL(Cosmology):
         
         
 class CosmologyOR(Cosmology):
-    
+    """
+    OuterRim simulation cosmology
+    """
     def __init__(self):
         cosmo_cosmoprimo = Cosmology(h=0.71, omega_cdm=0.1109, omega_b=0.02258,
                                      sigma8=0.8, n_s=0.963)
@@ -149,7 +164,9 @@ class CosmologyOR(Cosmology):
         
         
 class CosmologyUNIT(Cosmology):
-    
+    """
+    UNIT simulation cosmology
+    """
     def __init__(self):
         cosmo_cosmoprimo = Cosmology(h=0.6774, Omega_cdm=0.3089-0.04860, Omega_b=0.04860,
                                      sigma8=0.8147, n_s=0.9667)
@@ -157,7 +174,9 @@ class CosmologyUNIT(Cosmology):
         
         
 class CosmologyUchuu(Cosmology):
-    
+    """
+    Uchuu simulation cosmology
+    """
     def __init__(self):
         cosmo_cosmoprimo = Cosmology(h=0.6774, Omega_cdm=0.3089-0.04860, Omega_b=0.04860,
                                      sigma8=0.8159, n_s=0.9667)
@@ -166,7 +185,12 @@ class CosmologyUchuu(Cosmology):
     
 
 class CosmologyAbacus(Cosmology):
-    
+    """
+    AbacusSummit simulation cosmology
+
+    Args:
+        cosmo: simulation cosmology number, e.g. 0 for `c000' Planck cosmology
+    """
     def __init__(self, cosmo):
         
         cosmo_cosmoprimo = AbacusSummit(cosmo)

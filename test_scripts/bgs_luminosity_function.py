@@ -24,16 +24,23 @@ lf_S = LuminosityFunctionTabulated(lf_file_S, P, Q)
 
 # Number densities measured from volume-limited samples used in HOD
 # fitting. LF is constructed from interpolating between samples.
-lf_file = lookup.path+'/bgs/bgs_samples_cumulative_lf.dat'
-lf = LuminosityFunctionTabulated(lf_file, P, Q)
+# This is the target LF used when fitting HODs
+lf_file = lookup.path+'/bgs/bgs_target_cumulative_lf.dat'
+lf_target = LuminosityFunctionTabulated(lf_file, P, Q)
 
+# Number densities produced by the best-fitting HODs
+# This is the target LF we should use for the lightcone mocks, to avoid
+# changing the clustergin at z=0.2
+lf_file = lookup.path+'/bgs/bgs_samples_cumulative_lf.dat'
+lf_hod = LuminosityFunctionTabulated(lf_file, P, Q)
 
 # make plot of cumulative LF
 mags = np.arange(-25,-12,0.01)
 z = 0.2
 plt.plot(mags, lf_N.Phi_cumulative(mags, z), label='BGS North')
 plt.plot(mags, lf_S.Phi_cumulative(mags, z), label='BGS South')
-plt.plot(mags, lf.Phi_cumulative(mags, z), label='Vol lim samples')
+plt.plot(mags, lf_target.Phi_cumulative(mags, z), label='Vol lim samples')
+plt.plot(mags, lf_hod.Phi_cumulative(mags, z), label='Best-fitting HODs')
 
 plt.legend(loc='upper left').draw_frame(False)
 
@@ -48,7 +55,8 @@ mags = np.arange(-25,-12,0.0001)
 z = 0.2
 plt.plot(mags, lf_N.Phi(mags, z), label='BGS North')
 plt.plot(mags, lf_S.Phi(mags, z), label='BGS South')
-plt.plot(mags, lf.Phi(mags, z), label='Vol lim samples')
+plt.plot(mags, lf_target.Phi(mags, z), label='Vol lim samples')
+plt.plot(mags, lf_hod.Phi(mags, z), label='Best-fitting HODs')
 
 print(lf_S.Phi(mags, z))
 

@@ -47,6 +47,8 @@ path = get_lookup_dir()
 
 ######### File locations for AbacusSummit lightcone ##########
 
+# AbacusSummit simulation
+abacus_mass_function = path+"/abacus/mass_function_c{:03d}_ph{:03d}.txt"
 
 # HOD parameters for BGS mock
 abacus_hod_parameters    = path+'/abacus/hod_fits_c000_ph000.txt'

@@ -4,7 +4,7 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import curve_fit
 
 from hodpy.power_spectrum import PowerSpectrum
-from hodpy.cosmology import CosmologyMXXL
+from hodpy.cosmology import CosmologyMXXL, CosmologyAbacus
 from hodpy import lookup
 
 
@@ -159,6 +159,83 @@ class MassFunctionMXXL(object):
         sigma = sigma * (self.power_spectrum.delta_c(redshift)/self.power_spectrum.delta_c(0))**2
 
         dc=1
+        A = self.A(redshift)
+        a = self.a(redshift)
+        p = self.p(redshift)
+        
+        mf = A * np.sqrt(2*a/np.pi)
+        mf *= 1 + (sigma**2 / (a * dc**2))**p
+        mf *= dc / sigma
+        mf *= np.exp(-a * dc**2 / (2*sigma**2))
+
+        return mf
+
+    def number_density(self, log_mass, redshift):
+        '''
+        Returns the number density of haloes as a function of mass and redshift
+
+        Args:
+            log_mass: array of log_10 halo mass, where halo mass is in units 
+                      Msun/h
+            redshift: array of redshift
+        Returns:
+            array of halo number density in units (Mpc/h)^-3
+        '''  
+        mf = self.mass_function(log_mass, redshift)
+
+        return mf * self.power_spectrum.cosmo.mean_density(0) / 10**log_mass
+        
+
+
+class MassFunctionAbacus(object):
+    """
+    Class containing the fits to the AbacusSummit halo mass function
+
+    Args:
+        mf_fits_file: Tabulated file of the best fit mass function parameters
+    """
+    def __init__(self, cosmo, mf_fits_file=None):
+        
+        #self.power_spectrum = power_spectrum
+        self.cosmology = CosmologyAbacus(cosmo)
+        self.power_spectrum = PowerSpectrum(self.cosmology)
+
+        # read the file specified in lookup.py, unless a different file
+        # name is provided
+        if mf_fits_file is None:
+            mf_fits_file = lookup.abacus_mass_function.format(cosmo,0)
+        redshift, dc, A, a, p= np.loadtxt(mf_fits_file, unpack=True)
+            
+            
+        # interpolate parameters
+        self.dc = RegularGridInterpolator((redshift,), dc, bounds_error=False, 
+                                          fill_value=None)
+        
+        self.A = RegularGridInterpolator((redshift,), A, bounds_error=False, 
+                                          fill_value=None)
+
+        self.a = RegularGridInterpolator((redshift,), a, bounds_error=False, 
+                                          fill_value=None)
+
+        self.p = RegularGridInterpolator((redshift,), p, bounds_error=False, 
+                                          fill_value=None)
+
+
+    def mass_function(self, log_mass, redshift):
+        '''
+        Returns the halo mass function as a function of mass and redshift
+        (where f is defined as Eq. 4 of Jenkins 2000)
+
+        Args:
+            log_mass: array of log_10 halo mass, where halo mass is in units Msun/h
+            redshift: array of redshift
+        Returns:
+            array of halo mass function
+        '''        
+        
+        sigma = self.power_spectrum.sigma(10**log_mass, redshift)
+
+        dc = self.dc(redshift)
         A = self.A(redshift)
         a = self.a(redshift)
         p = self.p(redshift)

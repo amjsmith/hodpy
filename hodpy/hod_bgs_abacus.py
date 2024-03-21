@@ -6,7 +6,7 @@ from scipy.integrate import quad
 from scipy.optimize import minimize, root
 
 from hodpy import luminosity_function
-from hodpy.luminosity_function import LuminosityFunctionTargetBGS
+from hodpy.luminosity_function import LuminosityFunctionTabulated
 from hodpy.mass_function import MassFunctionAbacus
 from hodpy.cosmology import CosmologyAbacus
 from hodpy.k_correction import DESI_KCorrection
@@ -24,7 +24,7 @@ class HOD_BGS(HOD):
     HOD class containing the HODs used to create the mock catalogue described in Smith et al. 2017
 
     args:
-        [mass_function]: hodpy.MassFunction object, the mass functino of the simulation (default is MassFunctionMXXL)
+        [mass_function]: hodpy.MassFunction object, the mass function of the simulation (default is MassFunctionMXXL)
         [cosmology]:     hodpy.Cosmology object, the cosmology of the simulation (default is CosmologyMXXL)
         [mag_faint]:     faint apparent magnitude limit (default is 20.0)
         [kcorr]:         hodpy.KCorrection object, the k-correction (default is GAMA_KCorrection)
@@ -43,10 +43,11 @@ class HOD_BGS(HOD):
         [replace_satellite_lookup]: if set to True, will replace satellite_lookup_file even if the file exists
     """
 
-    def __init__(self, cosmo, photsys, mag_faint=20.0, hod_param_file=lookup.bgs_hod_parameters,
+    def __init__(self, cosmo, photsys, mag_faint=20.0, hod_param_file=lookup.abacus_hod_parameters,
                  mass_function=None, cosmology=None, kcorr=None,
-                 slide_file=lookup.bgs_hod_slide_factors, central_lookup_file=lookup.central_lookup_file, 
-                 satellite_lookup_file=lookup.satellite_lookup_file, target_lf_file=lookup.target_lf,
+                 slide_file=lookup.abacus_hod_slide_factors, 
+                 central_lookup_file=lookup.central_lookup_file, 
+                 satellite_lookup_file=lookup.satellite_lookup_file, target_lf_file=lookup.bgs_lf_target,
                  replace_central_lookup=False, replace_satellite_lookup=False,
                  mag_faint_interp=None, z0=0.2):
 
@@ -54,7 +55,7 @@ class HOD_BGS(HOD):
 
         # TODO: check how HOD parameters extrapolate to faint magnitudes
         # this is important for Mmin and M1, which are cubic functions
-        self.mag_faint_interp # if set, the HOD parameters will be interpolated linearly fainter than this magnitude
+        self.mag_faint_interp = mag_faint_interp # if set, the HOD parameters will be interpolated linearly fainter than this magnitude
 
         self.z0 = z0 # this is the redshift that the HODs were fitted at
         
@@ -67,9 +68,12 @@ class HOD_BGS(HOD):
             kcorr=DESI_KCorrection(band='r', photsys=photsys)
 
         # read the HOD parameters
-        self.Mmin_Ls, self.Mmin_Mt, self.Mmin_am, self.M1_Ls, self.M1_Mt, self.M1_am, \
-            self.M0_A, self.M0_B, self.alpha_A, self.alpha_B, self.alpha_C, self.sigma_A, \
-            self.sigma_B, self.sigma_C, self.sigma_D  = lookup.read_hod_param_file(hod_param_file)
+        print(hod_param_file)
+        self.Mmin_A, self.Mmin_B, self.Mmin_C, self.Mmin_D, \
+            self.sigma_A, self.sigma_B, self.sigma_C, self.sigma_D, \
+            self.M0_A, self.M0_B, \
+            self.M1_A, self.M1_B, self.M1_C, self.M1_D, \
+            self.alpha_A, self.alpha_B, self.alpha_C = lookup.read_hod_param_file_abacus(hod_param_file)
         
         self.mf = mass_function
         self.cosmo = cosmology
@@ -77,8 +81,8 @@ class HOD_BGS(HOD):
         self.kcorr = kcorr
         self.mag_faint = mag_faint
 
-        self.__slide_interpolator = \
-            self.__initialize_slide_factor_interpolator(slide_file)
+        # self.__slide_interpolator = \
+        #     self.__initialize_slide_factor_interpolator(slide_file)
         
         self.__central_interpolator = \
             self.__initialize_central_interpolator(central_lookup_file, replace_central_lookup)
@@ -298,9 +302,10 @@ class HOD_BGS(HOD):
         Returns:
             array of slide factors
         """
-        points = np.array(list(zip(magnitude, redshift)))
-        return self.__slide_interpolator(points)
+        # points = np.array(list(zip(magnitude, redshift)))
+        # return self.__slide_interpolator(points)
 
+        return 1
 
     def __Mmin_z0(self, magnitude):
         # get Mmin as a function of magnitude at the redshift the HODs were fitted (z0=0.2)

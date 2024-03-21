@@ -54,9 +54,19 @@ abacus_mass_function = path+"/abacus/mass_function_c{:03d}_ph{:03d}.txt"
 abacus_hod_parameters    = path+'/abacus/hod_fits_c000_ph000.txt'
 abacus_hod_slide_factors = path+'/abacus/slide_factors.dat' # will be created if doesn't exist
 
+# lookup files for central/satellite magnitudes
+central_lookup_file   = path+"/abacus/central_magnitudes.npy"   # will be created if doesn't exist
+satellite_lookup_file = path+"/abacus/satellite_magnitudes.npy" # will be created if doesn't exist
+
 # BGS k-corrections
 kcorr_file_bgs = path+'/bgs/jmext_kcorr_{}_{}band_z01.dat' # for magnitudes
 kcorr_gmr_bgs = path+'/bgs/gmr_lookup_{}_{}.hdf5'          # for g-r colours
+
+# BGS cumulative luminosity function
+# bgs_lf_target = path+'/bgs/bgs_N_cumulative_lf.dat' # measurement in the North from Sam Moore
+# bgs_lf_target = path+'/bgs/bgs_S_cumulative_lf.dat' # measurement in the South from Sam Moore
+# bgs_lf_target = path+'/bgs/bgs_target_cumulative_lf.dat' # measurements from volume limited samples (used to fit HODs)
+bgs_lf_target = path+'/bgs/bgs_samples_cumulative_lf.dat' # LF predicted from best-fitting HODs - use this one to avoid changing the clustering at z=0.2
 
 # BGS g-r colour distribution fits
 colour_fits_bgs = path+'/bgs/gmr_colour_fits_{}.hdf5'
@@ -74,8 +84,8 @@ bgs_hod_parameters    = path+"/mxxl/hod_params.dat"
 bgs_hod_slide_factors = path+"/mxxl/slide_factors.dat" # will be created if doesn't exist
 
 # lookup files for central/satellite magnitudes
-central_lookup_file   = path+"/mxxl/central_magnitudes.npy"   # will be created if doesn't exist
-satellite_lookup_file = path+"/mxxl/satellite_magnitudes.npy" # will be created if doesn't exist
+# central_lookup_file   = path+"/mxxl/central_magnitudes.npy"   # will be created if doesn't exist
+# satellite_lookup_file = path+"/mxxl/satellite_magnitudes.npy" # will be created if doesn't exist
 
 # k-corrections
 kcorr_file = path+"/gama/k_corr_rband_z01.dat"

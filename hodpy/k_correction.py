@@ -26,7 +26,7 @@ class KCorrection(object):
 
 
 class DESI_KCorrection(object):
-    def __init__(self, band, photsys, z0=0.1, kind="cubic"):
+    def __init__(self, band, photsys, cosmology=None, z0=0.1, kind="cubic"):
         """
         Colour-dependent polynomial fit to the FSF DESI K-corrections, 
         used to convert between SDSS r-band Petrosian apparent magnitudes, and rest 
@@ -35,6 +35,8 @@ class DESI_KCorrection(object):
         Args:
             band: band pass, e.g. 'r'
             photsys: photometric region, 'N' or 'S'
+            [cosmology]: object of class Cosmology, needed for converting between apparent
+                         and absolute magnitudes. Default is None.
             [z0]: reference redshift. Default value is z0=0.1
             [kind]: type of interpolation between colour bins,
                   e.g. "linear", "cubic". Default is "cubic"
@@ -47,7 +49,9 @@ class DESI_KCorrection(object):
         # A*(z-z0)^6 + B*(z-z0)^5 + C*(z-z0)^4 + D*(z-z0)^3 + ... + G
         col_min, col_max, A, B, C, D, E, F, G, col_med = \
             np.loadtxt(k_corr_file, unpack=True)
-    
+
+        self.cosmo = cosmology
+        
         self.z0 = z0             # reference redshift
 
         self.nbins = len(col_min) # number of colour bins in file
@@ -178,6 +182,86 @@ class DESI_KCorrection(object):
         refzs = refz * np.ones_like(redshift)
         
         return  self.k(redshift, restframe_colour) - self.k(refzs, restframe_colour) - 2.5 * np.log10(1. + refz)
+
+    
+    def apparent_magnitude(self, absolute_magnitude, redshift, colour, use_ecorr=True, Q=lookup.Q, zq=lookup.zq):
+        """
+        Convert absolute magnitude to apparent magnitude
+
+        Args:
+            absolute_magnitude: array of absolute magnitudes (with h=1)
+            redshift:           array of redshifts
+            colour:             array of ^0.1(g-r) colour
+            [use_ecorr]:        if True, use an E-correction of the form Q*(redshift - zq). Default is True
+            [Q]:                Q parameter if use_ecorr=True. Default is read from lookup.py
+            [zq]:               zq parameter if use_ecorr=True. Default is read from lookup.py
+        Returns:
+            array of apparent magnitudes
+        """
+        # Luminosity distance
+        D_L = (1.+redshift) * self.cosmo.comoving_distance(redshift)
+
+        if use_ecorr:
+            E = Q * (redshift - zq)
+        else:
+            E = 0
+            
+        return absolute_magnitude + 5*np.log10(D_L) + 25 + self.k(redshift,colour) - E
+
+    
+    def absolute_magnitude(self, apparent_magnitude, redshift, colour, use_ecorr=True, Q=lookup.Q, zq=lookup.zq):
+        """
+        Convert apparent magnitude to absolute magnitude
+
+        Args:
+            apparent_magnitude: array of apparent magnitudes
+            redshift:           array of redshifts
+            colour:             array of ^0.1(g-r) colour
+            [use_ecorr]:        if True, use an E-correction of the form Q*(redshift - zq). Default is True
+            [Q]:                Q parameter if use_ecorr=True. Default is read from lookup.py
+            [zq]:               zq parameter if use_ecorr=True. Default is read from lookup.py
+        Returns:
+            array of absolute magnitudes (with h=1)
+        """
+        # Luminosity distance
+        D_L = (1.+redshift) * self.cosmo.comoving_distance(redshift) 
+
+        if use_ecorr:
+            E = Q * (redshift - zq)
+        else:
+            E = 0
+            
+        return apparent_magnitude - 5*np.log10(D_L) - 25 - self.k(redshift,colour) + E
+
+    
+    def magnitude_faint(self, redshift, mag_faint, use_ecorr=True, Q=lookup.Q, zq=lookup.zq):
+        """
+        Convert faintest apparent magnitude to the faintest absolute magnitude
+
+        Args:
+            redshift: array of redshifts
+            mag_faint: faintest apparent magnitude
+            [use_ecorr]:        if True, use an E-correction of the form Q*(redshift - zq). Default is True
+            [Q]:                Q parameter if use_ecorr=True. Default is read from lookup.py
+            [zq]:               zq parameter if use_ecorr=True. Default is read from lookup.py
+        Returns:
+            array of absolute magnitudes (with h=1)
+        """
+        # convert faint apparent magnitude to absolute magnitude
+        # for bluest and reddest galaxies
+        arr_ones = np.ones(len(redshift))
+        abs_mag_blue = self.absolute_magnitude(arr_ones*mag_faint, redshift, arr_ones*-1,
+                                               use_ecorr=use_ecorr, Q=Q, zq=zq)
+        abs_mag_red = self.absolute_magnitude(arr_ones*mag_faint, redshift, arr_ones*2,
+                                              use_ecorr=use_ecorr, Q=Q, zq=zq)
+        
+        # find faintest absolute magnitude, add small amount to be safe
+        mag_faint = np.maximum(abs_mag_red, abs_mag_blue) + 0.01
+
+        # avoid infinity
+        mag_faint = np.minimum(mag_faint, -10)
+        
+        return mag_faint
 
 
     
@@ -488,7 +572,7 @@ class GAMA_KCorrection(KCorrection):
         # for bluest and reddest galaxies
         arr_ones = np.ones(len(redshift))
         abs_mag_blue = self.absolute_magnitude(arr_ones*mag_faint,
-                                               redshift, arr_ones*0)
+                                               redshift, arr_ones*-1)
         abs_mag_red = self.absolute_magnitude(arr_ones*mag_faint,
                                                redshift, arr_ones*2)
         

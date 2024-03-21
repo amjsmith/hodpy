@@ -44,6 +44,11 @@ def read_hod_param_file_abacus(hod_param_file):
 
 path = get_lookup_dir()
 
+######## Parameter values to set ##########
+
+# E-correction of the form Q*(z-zp)
+Q = 0.67
+zq = 0.1
 
 ######### File locations for AbacusSummit lightcone ##########
 

@@ -200,14 +200,17 @@ class LuminosityFunctionTabulated(LuminosityFunction):
     """
     def __init__(self, filename, P, Q):
         
-        self.magnitude, self.log_number_density = \
+        self.magnitude_bins, self.log_number_density = \
                               np.loadtxt(filename, unpack=True)
         self.P = P
         self.Q = Q
 
         self.__lf_interpolator = \
-            RegularGridInterpolator((self.magnitude,), self.log_number_density,
+            RegularGridInterpolator((self.magnitude_bins,), self.log_number_density,
                                     bounds_error=False, fill_value=None)
+        
+        self._interpolator = \
+                 self._LuminosityFunction__initialize_interpolator()
 
     def Phi_cumulative(self, magnitude, redshift):
         """

@@ -58,7 +58,7 @@ class HOD_BGS(HOD):
         [replace_satellite_lookup]: Replace satellite_lookup_file if it already exists? Default is False
     """
 
-    def __init__(self, cosmo, photsys, mag_faint=20.2, mag_faint_extrapolate=None, z0=0.2
+    def __init__(self, cosmo, photsys, mag_faint=20.2, mag_faint_extrapolate=None, z0=0.2,
                  hod_param_file=lookup.abacus_hod_parameters,
                  redshift_evolution=False, mass_function=None, kcorr=None,
                  slide_file=None, central_lookup_file=None, 

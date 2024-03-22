@@ -21,74 +21,116 @@ def L_function(magnitude, A, B, C, D):
 
 class HOD_BGS(HOD):
     """
-    HOD class containing the HODs used to create the mock catalogue described in Smith et al. 2017
+    HOD class containing the HODs used to create the 2ndGen AbacusSummit BGS mocks
 
     args:
-        [mass_function]: hodpy.MassFunction object, the mass function of the simulation (default is MassFunctionMXXL)
-        [cosmology]:     hodpy.Cosmology object, the cosmology of the simulation (default is CosmologyMXXL)
-        [mag_faint]:     faint apparent magnitude limit (default is 20.0)
-        [kcorr]:         hodpy.KCorrection object, the k-correction (default is GAMA_KCorrection)
-        [hod_param_file]: location of file which contains HOD parameters
-        [slide_file]:    location of file which contains 'slide' factors for evolving HODs. Will be created
-                         automatically if the file doesn't already exist
-        [central_lookup_file]: location of lookup file of central magnitudes. Will be created if the file
-                               doesn't already exist
-        [satellite_lookup_file]: location of lookup file of satellite magnitudes. Will be created if the file
-                                 doesn't already exist
-        [target_lf_file]: location of file containing the target luminosity function. Will be created if the
-                          file doesn't already exist
-        [sdss_lf_file]:  location of file which contains the SDSS luminosity function
-        [lf_param_file]: location of file which contains the parameters of the evolving GAMA luminosity function
-        [replace_central_lookup]: if set to True, will replace central_lookup_file even if the file exists
-        [replace_satellite_lookup]: if set to True, will replace satellite_lookup_file even if the file exists
+        cosmo:          AbacusSummit cosmology number, e.g. 0 for cosmology `c000'
+        photsys:        Photometric region, 'N' or 'S'
+        [mag_faint_extrapolate]: If specified, the HOD parameters Mmin and M1 will be
+                        extrapolated linearly fainter than this magnitude. Default is None
+        [z0]:           Redshift at which the HODs were fitted. Default is 0.2
+        [mag_faint]:    Faint apparent magnitude limit. Default is 20.2 
+        [hod_param_file]: Location of file which contains HOD parameters. If no value is 
+                        provided, the file defined in lookup.abacus_hod_parameters
+                        will be read. Default value is None.
+        [redshift_evolution]: Evolve the HODs with redshift to match the target luminosity
+                        function? Default is False
+        [mass_function]: Object of MassFunction class. If no mass function is provided, it will
+                        use the mass function fits for the AbacusSummit cosmology specified by cosmo.
+                        Default value is None. 
+        [kcorr]:        Object of class KCorrection. If none is provided, DESI_KCorrection will
+                        be initialised for the photometric region specified by photsys.
+                        Default is None.
+        [slide_file]:   Location of file which contains `slide' factors for evolving HODs. 
+                        Will be created automatically if the file doesn't already exist.
+                        If none is provided, the default location defined by
+                        lookup.abacus_hod_slide_factors will be used. Default is None.
+        [central_lookup_file]: Location of lookup file of central magnitudes. Will be created if 
+                        the file doesn't already exist. If none is specified, the default location
+                        defined by lookup.central_lookup_file will be used. Default is None.
+        [satellite_lookup_file]: Location of lookup file of satellite magnitudes. Will be created if 
+                        the file doesn't already exist. If none is specified, the default location
+                        defined by lookup.satellite_lookup_file will be used. Default is None.
+        [target_lf_file]: Location of file containing the target luminosity function. If none is
+                        specified, the default location defined by lookup.bgs_lf_target will
+                        be used. Default is None.
+        [replace_central_lookup]: Replace central_lookup_file if it already exists? Default is False
+        [replace_satellite_lookup]: Replace satellite_lookup_file if it already exists? Default is False
     """
 
-    def __init__(self, cosmo, photsys, mag_faint=20.0, hod_param_file=lookup.abacus_hod_parameters,
-                 mass_function=None, cosmology=None, kcorr=None,
-                 slide_file=lookup.abacus_hod_slide_factors, 
-                 central_lookup_file=lookup.central_lookup_file, 
-                 satellite_lookup_file=lookup.satellite_lookup_file, target_lf_file=lookup.bgs_lf_target,
-                 replace_central_lookup=False, replace_satellite_lookup=False,
-                 mag_faint_interp=None, z0=0.2):
-
+    def __init__(self, cosmo, photsys, mag_faint=20.2, mag_faint_extrapolate=None, z0=0.2
+                 hod_param_file=lookup.abacus_hod_parameters,
+                 redshift_evolution=False, mass_function=None, kcorr=None,
+                 slide_file=None, central_lookup_file=None, 
+                 satellite_lookup_file=None, target_lf_file=None,
+                 replace_central_lookup=False, replace_satellite_lookup=False):
+        
         # TODO: include the option to set a faint absolute magnitude limit
 
-        # TODO: check how HOD parameters extrapolate to faint magnitudes
-        # this is important for Mmin and M1, which are cubic functions
-        self.mag_faint_interp = mag_faint_interp # if set, the HOD parameters will be interpolated linearly fainter than this magnitude
+        # if set, the HOD parameters Mmin and M1 will be extrapolated linearly fainter than this 
+        # magnitude. These were defined as cubic functions, so can shoot off to large values
+        # outside the range they were fitted. 
+        self.mag_faint_extrapolate = mag_faint_extrapolate 
 
         self.z0 = z0 # this is the redshift that the HODs were fitted at
+        self.redshift_evolution = redshift_evolution # include redshift evolution?
         
-        # use defaults for quantities not provided
+        # faintest apparent magnitude we are populating galaxies to
+        self.mag_faint = mag_faint 
+        
+        # initialize AbacusSummit cosmology
+        self.cosmo = CosmologyAbacus(cosmo)
+        
+        # initialize mass function. Use default AbacusSummit MF if none provided
+        # this is needed to calculate galaxy number densities from the HOD
         if mass_function is None:
-            mass_function=MassFunctionAbacus(cosmo)
-        if cosmology is None:
-            cosmology=CosmologyAbacus(cosmo)
+            mass_function = MassFunctionAbacus(cosmo)
+        self.mf = mass_function
+        
+        # initialize target luminosity function
+        # this is needed to calculate 'slide factors' to evolve the HOD
+        # BGS LF is already E-corrected, so set evolution parameters P = Q = 0
+        if target_lf_file is None:
+            target_lf_file = lookup.bgs_lf_target.format(cosmo,0)
+        self.lf = LuminosityFunctionTabulated(target_lf_file, P=0, Q=0) 
+            
+        # initialize k-corrections. Use default DESI BGS k-corrections if none provided
         if kcorr is None:
-            kcorr=DESI_KCorrection(band='r', photsys=photsys)
+            kcorr=DESI_KCorrection(band='r', photsys=photsys, cosmology=self.cosmo)
+        self.kcorr = kcorr
 
         # read the HOD parameters
-        print(hod_param_file)
+        hod_parameters = lookup.read_hod_param_file_abacus(hod_param_file.format(cosmo,0))
         self.Mmin_A, self.Mmin_B, self.Mmin_C, self.Mmin_D, \
             self.sigma_A, self.sigma_B, self.sigma_C, self.sigma_D, \
             self.M0_A, self.M0_B, \
             self.M1_A, self.M1_B, self.M1_C, self.M1_D, \
-            self.alpha_A, self.alpha_B, self.alpha_C = lookup.read_hod_param_file_abacus(hod_param_file)
+            self.alpha_A, self.alpha_B, self.alpha_C = hod_parameters
+                    
+        # if redshift evolution is being done, initialize the `slide factors'
+        # this will be read from a file if it already exists
+        # if not, they will be calculated - this is slow!
+        if self.redshift_evolution:
+            if slide_file is None:
+                slide_file = lookup.abacus_hod_slide_factors.format(cosmo,0)
+                
+            self.__slide_interpolator = \
+                self.__initialize_slide_factor_interpolator(slide_file)
         
-        self.mf = mass_function
-        self.cosmo = cosmology
-        self.lf = LuminosityFunctionTabulated(target_lf_file, P=0, Q=0) # LF is E-corrected, so set P=Q=0
-        self.kcorr = kcorr
-        self.mag_faint = mag_faint
-
-        # self.__slide_interpolator = \
-        #     self.__initialize_slide_factor_interpolator(slide_file)
-        
+        # initialize the lookup tables to get magnitudes for central and 
+        # satellite galaxies. These files are created if they don't exist, or 
+        # if replace_central_lookup and replace_satellite_lookup are set to True
+        if central_lookup_file is None:
+            central_lookup_file = lookup.central_lookup_file.format(cosmo,0)
         self.__central_interpolator = \
-            self.__initialize_central_interpolator(central_lookup_file, replace_central_lookup)
+            self.__initialize_central_interpolator(central_lookup_file, 
+                                                   replace_central_lookup)
         
+        if satellite_lookup_file is None:
+            satellite_lookup_file = lookup.satellite_lookup_file.format(cosmo,0)
         self.__satellite_interpolator = \
-            self.__initialize_satellite_interpolator(satellite_lookup_file, replace_satellite_lookup)
+            self.__initialize_satellite_interpolator(satellite_lookup_file, 
+                                                     replace_satellite_lookup)
 
         
     def __integration_function(self, logM, mag, z, f):
@@ -302,18 +344,19 @@ class HOD_BGS(HOD):
         Returns:
             array of slide factors
         """
-        # points = np.array(list(zip(magnitude, redshift)))
-        # return self.__slide_interpolator(points)
-
-        return 1
+        if self.redshift_evolution:
+            points = np.array(list(zip(magnitude, redshift)))
+            return self.__slide_interpolator(points)
+        else:
+            return 1
 
     def __Mmin_z0(self, magnitude):
         # get Mmin as a function of magnitude at the redshift the HODs were fitted (z0=0.2)
         Mmin = 10**L_function(magnitude, self.Mmin_A, self.Mmin_B, self.Mmin_C, self.Mmin_D)
 
-        # extrapolate as a power law at the faint end, fainter than mag_faint_interp
-        if not self.mag_faint_interp is None:
-            x = self.mag_faint_interp
+        # extrapolate as a power law at the faint end, fainter than mag_faint_extrapolate
+        if not self.mag_faint_extrapolate is None:
+            x = self.mag_faint_extrapolate
             m_lin = self.Mmin_B + 2*(20+x)*self.Mmin_C + 3*(20+x)**2*self.Mmin_D
             c_lin = L_function(x, self.Mmin_A, self.Mmin_B, self.Mmin_C, self.Mmin_D) - (x*m_lin)
             Mmin_lin = 10**(m_lin * magnitude + c_lin)
@@ -328,7 +371,7 @@ class HOD_BGS(HOD):
     
         return Mmin
     
-    def Mmin(self, magnitude, redshift, f=None):
+    def Mmin(self, magnitude, redshift=None, f=None):
         """
         HOD parameter Mmin, which is the mass at which a halo has a 50%
         change of containing a central galaxy brighter than the magnitude 
@@ -339,6 +382,10 @@ class HOD_BGS(HOD):
         Returns:
             array of Mmin
         """
+        
+        if not self.redshift_evolution:
+            return self.__Mmin_z0(magnitude)
+        
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
 
@@ -358,9 +405,9 @@ class HOD_BGS(HOD):
         # get M1 as a function of magnitude at the redshift the HODs were fitted (z0=0.2)
         M1 = 10**L_function(magnitude, self.M1_A, self.M1_B, self.M1_C, self.M1_D)
 
-        # extrapolate as a power law at the faint end, fainter than mag_faint_interp
-        if not self.mag_faint_interp is None:
-            x = self.mag_faint_interp
+        # extrapolate as a power law at the faint end, fainter than mag_faint_extrapolate
+        if not self.mag_faint_extrapolate is None:
+            x = self.mag_faint_extrapolate
             m_lin = self.M1_B + 2*(20+x)*self.M1_C + 3*(20+x)**2*self.M1_D
             c_lin = L_function(x, self.M1_A, self.M1_B, self.M1_C, self.M1_D) - (x*m_lin)
             M1_lin = 10**(m_lin * magnitude + c_lin)
@@ -375,7 +422,7 @@ class HOD_BGS(HOD):
     
         return M1
         
-    def M1(self, magnitude, redshift, f=None):
+    def M1(self, magnitude, redshift=None, f=None):
         """
         HOD parameter M1, which is the mass at which a halo contains an
         average of 1 satellite brighter than the magnitude threshold
@@ -385,6 +432,10 @@ class HOD_BGS(HOD):
         Returns:
             array of M1
         """
+        
+        if not self.redshift_evolution:
+            return self.__M1_z0(magnitude)
+        
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
 
@@ -406,7 +457,7 @@ class HOD_BGS(HOD):
         logM0[logM0 <= 1] = 1
         return 10**logM0
     
-    def M0(self, magnitude, redshift, f=None):
+    def M0(self, magnitude, redshift=None, f=None):
         """
         HOD parameter M0, which sets the cut-off mass scale for satellites
         satellites
@@ -416,6 +467,10 @@ class HOD_BGS(HOD):
         Returns:
             array of M0
         """
+        
+        if not self.redshift_evolution:
+            return self.__M0_z0(magnitude)
+        
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
 
@@ -432,7 +487,11 @@ class HOD_BGS(HOD):
         else:
             return M0 * self.slide_factor(magnitude, redshift)
 
-    def alpha(self, magnitude, redshift):
+    def __alpha_z0(self, magnitude):
+        # get alpha as a function of magnitude at the redshift the HODs were fitted (z0=0.2)
+        return self.alpha_A + self.alpha_B**(self.alpha_C - magnitude - 20)
+        
+    def alpha(self, magnitude, redshift=None):
         """
         HOD parameter alpha, which sets the slope of the power law for
         satellites
@@ -442,6 +501,10 @@ class HOD_BGS(HOD):
         Returns:
             array of alpha
         """
+        
+        if not self.redshift_evolution:
+            return self.__alpha_z0(magnitude)
+        
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
 
@@ -450,13 +513,16 @@ class HOD_BGS(HOD):
         log_lum_z0 = np.log10(self.lf.mag2lum(magnitude_z0))
 
         # find alpha
-        a = self.alpha_A + self.alpha_B**(self.alpha_C - magnitude_z0 - 20)
+        a = self.__alpha_z0(magnitude_z0)
         
         # alpha is kept fixed with redshift
         return a
 
-
-    def sigma_logM(self, magnitude, redshift):
+    def __sigma_logM_z0(self, magnitude):
+        # get sigma_logM as a function of magnitude at the redshift the HODs were fitted (z0=0.2)
+        return self.sigma_A + (self.sigma_B-self.sigma_A) / (1.+np.exp((magnitude+self.sigma_C)*self.sigma_D))
+       
+    def sigma_logM(self, magnitude, redshift=None):
         """
         HOD parameter sigma_logM, which sets the amount of scatter in 
         the luminosity of central galaxies
@@ -466,6 +532,10 @@ class HOD_BGS(HOD):
         Returns:
             array of sigma_logM
         """
+        
+        if not self.redshift_evolution:
+            return self.__sigma_logM_z0(magnitude)
+        
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
 
@@ -473,13 +543,13 @@ class HOD_BGS(HOD):
         magnitude_z0 = self.lf.magnitude(n, np.ones(len(n))*self.z0)
 
         # find sigma_logM
-        sigma = self.sigma_A + (self.sigma_B-self.sigma_A) / (1.+np.exp((magnitude_z0+self.sigma_C)*self.sigma_D))
+        sigma = self.__sigma_logM_z0(magnitude_z0)
 
         # sigma_logM is kept fixed with redshift
         return sigma
 
     
-    def number_centrals_mean(self, log_mass, magnitude, redshift, f=None):
+    def number_centrals_mean(self, log_mass, magnitude, redshift=None, f=None):
         """
         Average number of central galaxies in each halo brighter than
         some absolute magnitude threshold
@@ -497,7 +567,7 @@ class HOD_BGS(HOD):
                 sig=self.sigma_logM(magnitude, redshift)/np.sqrt(2))
 
 
-    def number_satellites_mean(self, log_mass, magnitude, redshift, f=None):
+    def number_satellites_mean(self, log_mass, magnitude, redshift=None, f=None):
         """
         Average number of satellite galaxies in each halo brighter than
         some absolute magnitude threshold
@@ -518,7 +588,7 @@ class HOD_BGS(HOD):
         return num_sat
 
 
-    def number_galaxies_mean(self, log_mass, magnitude, redshift, f=None):
+    def number_galaxies_mean(self, log_mass, magnitude, redshift=None, f=None):
         """
         Average total number of galaxies in each halo brighter than
         some absolute magnitude threshold
@@ -533,7 +603,7 @@ class HOD_BGS(HOD):
             self.number_satellites_mean(log_mass, magnitude, redshift, f)
 
 
-    def get_number_satellites(self, log_mass, redshift):
+    def get_number_satellites(self, log_mass, redshift=None):
         """
         Randomly draw the number of satellite galaxies in each halo,
         brighter than mag_faint, from a Poisson distribution
@@ -554,7 +624,7 @@ class HOD_BGS(HOD):
         return np.random.poisson(number_mean)
 
 
-    def get_magnitude_centrals(self, log_mass, redshift):
+    def get_magnitude_centrals(self, log_mass, redshift=None):
         """
         Use the HODs to draw a random magnitude for each central galaxy
         Args:
@@ -571,7 +641,7 @@ class HOD_BGS(HOD):
         return self.__central_interpolator(points)
     
 
-    def get_magnitude_satellites(self, log_mass, number_satellites, redshift):
+    def get_magnitude_satellites(self, log_mass, number_satellites, redshift=None):
         """
         Use the HODs to draw a random magnitude for each satellite galaxy
         Args:

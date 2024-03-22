@@ -31,7 +31,7 @@ lf_target = LuminosityFunctionTabulated(lf_file, P, Q)
 # Number densities produced by the best-fitting HODs
 # This is the target LF we should use for the lightcone mocks, to avoid
 # changing the clustergin at z=0.2
-lf_file = lookup.path+'/bgs/bgs_samples_cumulative_lf.dat'
+lf_file = lookup.path+'/bgs/bgs_samples_cumulative_lf_c000_ph000.dat'
 lf_hod = LuminosityFunctionTabulated(lf_file, P, Q)
 
 # make plot of cumulative LF
@@ -42,7 +42,7 @@ plt.plot(mags, lf_S.Phi_cumulative(mags, z), label='BGS South')
 plt.plot(mags, lf_target.Phi_cumulative(mags, z), label='Vol lim samples')
 plt.plot(mags, lf_hod.Phi_cumulative(mags, z), label='Best-fitting HODs')
 
-plt.legend(loc='upper left').draw_frame(False)
+plt.legend(loc='lower right').draw_frame(False)
 
 plt.yscale('log')
 plt.ylabel(r'$\phi(<M_r) \ / \ \mathrm{Mpc}^{-3}h^3$')
@@ -60,7 +60,7 @@ plt.plot(mags, lf_hod.Phi(mags, z), label='Best-fitting HODs')
 
 print(lf_S.Phi(mags, z))
 
-plt.legend(loc='upper left').draw_frame(False)
+plt.legend(loc='lower right').draw_frame(False)
 
 plt.yscale('log')
 plt.ylabel(r'$\phi(M_r) \ / \ \mathrm{Mpc}^{-3}h^3\mathrm{mag}^{-1}$')

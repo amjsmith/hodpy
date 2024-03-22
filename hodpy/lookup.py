@@ -60,8 +60,8 @@ abacus_hod_parameters    = path+'/abacus/hod_fits_c{:03d}_ph{:03d}.txt'
 abacus_hod_slide_factors = path+'/abacus/slide_factors_c{:03d}_ph{:03d}.dat' # will be created if doesn't exist
 
 # lookup files for central/satellite magnitudes
-central_lookup_file   = path+"/abacus/central_magnitudes_c{:03d}_ph{:03d}.npy"   # will be created if doesn't exist
-satellite_lookup_file = path+"/abacus/satellite_magnitudes_c{:03d}_ph{:03d}.npy" # will be created if doesn't exist
+central_lookup_file   = path+"/abacus/central_magnitudes_c{:03d}_ph{:03d}_{}.npy"   # will be created if doesn't exist
+satellite_lookup_file = path+"/abacus/satellite_magnitudes_c{:03d}_ph{:03d}_{}.npy" # will be created if doesn't exist
 
 # BGS k-corrections
 kcorr_file_bgs = path+'/bgs/jmext_kcorr_{}_{}band_z01.dat' # for magnitudes

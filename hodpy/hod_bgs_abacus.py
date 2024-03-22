@@ -27,7 +27,7 @@ class HOD_BGS(HOD):
         cosmo:          AbacusSummit cosmology number, e.g. 0 for cosmology `c000'
         photsys:        Photometric region, 'N' or 'S'
         [mag_faint_extrapolate]: If specified, the HOD parameters Mmin and M1 will be
-                        extrapolated linearly fainter than this magnitude. Default is None
+                        extrapolated linearly fainter than this magnitude. Default is -17
         [z0]:           Redshift at which the HODs were fitted. Default is 0.2
         [mag_faint]:    Faint apparent magnitude limit. Default is 20.2 
         [hod_param_file]: Location of file which contains HOD parameters. If no value is 
@@ -56,17 +56,20 @@ class HOD_BGS(HOD):
                         be used. Default is None.
         [replace_central_lookup]: Replace central_lookup_file if it already exists? Default is False
         [replace_satellite_lookup]: Replace satellite_lookup_file if it already exists? Default is False
+        [replace_slide_file]: Replace slide_file if it already exists? Default is False
     """
 
-    def __init__(self, cosmo, photsys, mag_faint=20.2, mag_faint_extrapolate=None, z0=0.2,
+    def __init__(self, cosmo, photsys, mag_faint=20.2, mag_faint_extrapolate=-17, z0=0.2,
                  hod_param_file=lookup.abacus_hod_parameters,
                  redshift_evolution=False, mass_function=None, kcorr=None,
                  slide_file=None, central_lookup_file=None, 
                  satellite_lookup_file=None, target_lf_file=None,
-                 replace_central_lookup=False, replace_satellite_lookup=False):
+                 replace_central_lookup=False, replace_satellite_lookup=False,
+                 replace_slide_file=False):
+        
         
         # TODO: include the option to set a faint absolute magnitude limit
-
+        
         # if set, the HOD parameters Mmin and M1 will be extrapolated linearly fainter than this 
         # magnitude. These were defined as cubic functions, so can shoot off to large values
         # outside the range they were fitted. 
@@ -121,13 +124,13 @@ class HOD_BGS(HOD):
         # satellite galaxies. These files are created if they don't exist, or 
         # if replace_central_lookup and replace_satellite_lookup are set to True
         if central_lookup_file is None:
-            central_lookup_file = lookup.central_lookup_file.format(cosmo,0)
+            central_lookup_file = lookup.central_lookup_file.format(cosmo,0,photsys)
         self.__central_interpolator = \
             self.__initialize_central_interpolator(central_lookup_file, 
                                                    replace_central_lookup)
         
         if satellite_lookup_file is None:
-            satellite_lookup_file = lookup.satellite_lookup_file.format(cosmo,0)
+            satellite_lookup_file = lookup.satellite_lookup_file.format(cosmo,0,photsys)
         self.__satellite_interpolator = \
             self.__initialize_satellite_interpolator(satellite_lookup_file, 
                                                      replace_satellite_lookup)

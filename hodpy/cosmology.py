@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 from cosmoprimo.fiducial import AbacusSummit
-from cosmoprimo import Cosmology
+from cosmoprimo import Cosmology as Cosmology_cosmoprimo
 
 class Cosmology(object):
     """
@@ -148,9 +148,9 @@ class CosmologyMXXL(Cosmology):
     """
     def __init__(self):
         
-        cosmo_cosmoprimo = Cosmology(h=0.73, Omega_cdm=0.25-0.045, Omega_b=0.045,
-                                     sigma8=0.9, n_s=1)
-        super().__init__(cosmo_nbody)
+        cosmo_cosmoprimo = Cosmology_cosmoprimo(h=0.73, Omega_cdm=0.25-0.045, Omega_b=0.045,
+                                                sigma8=0.9, n_s=1, engine='class')
+        super().__init__(cosmo_cosmoprimo)
         
         
 class CosmologyOR(Cosmology):
@@ -158,9 +158,9 @@ class CosmologyOR(Cosmology):
     OuterRim simulation cosmology
     """
     def __init__(self):
-        cosmo_cosmoprimo = Cosmology(h=0.71, omega_cdm=0.1109, omega_b=0.02258,
-                                     sigma8=0.8, n_s=0.963)
-        super().__init__(cosmo_nbody)
+        cosmo_cosmoprimo = Cosmology_cosmoprimo(h=0.71, omega_cdm=0.1109, omega_b=0.02258,
+                                                sigma8=0.8, n_s=0.963, engine='class')
+        super().__init__(cosmo_cosmoprimo)
         
         
 class CosmologyUNIT(Cosmology):
@@ -168,9 +168,9 @@ class CosmologyUNIT(Cosmology):
     UNIT simulation cosmology
     """
     def __init__(self):
-        cosmo_cosmoprimo = Cosmology(h=0.6774, Omega_cdm=0.3089-0.04860, Omega_b=0.04860,
-                                     sigma8=0.8147, n_s=0.9667)
-        super().__init__(cosmo_nbody)
+        cosmo_cosmoprimo = Cosmology_cosmoprimo(h=0.6774, Omega_cdm=0.3089-0.04860, Omega_b=0.04860,
+                                                sigma8=0.8147, n_s=0.9667, engine='class')
+        super().__init__(cosmo_cosmoprimo)
         
         
 class CosmologyUchuu(Cosmology):
@@ -178,9 +178,9 @@ class CosmologyUchuu(Cosmology):
     Uchuu simulation cosmology
     """
     def __init__(self):
-        cosmo_cosmoprimo = Cosmology(h=0.6774, Omega_cdm=0.3089-0.04860, Omega_b=0.04860,
-                                     sigma8=0.8159, n_s=0.9667)
-        super().__init__(cosmo_nbody)
+        cosmo_cosmoprimo = Cosmology_cosmoprimo(h=0.6774, Omega_cdm=0.3089-0.04860, Omega_b=0.04860,
+                                                sigma8=0.8159, n_s=0.9667, engine='class')
+        super().__init__(cosmo_cosmoprimo)
 
     
 

@@ -12,17 +12,21 @@ class PowerSpectrum(object):
     Class containing the linear power spectrum and useful methods
 
     Args:
-        filename: Tabulated file of linear P(k) at z=0
-        h0:       Hubble parameter at z=0, in units [100 km/s/Mpc]
-        OmegaM:   Omega matter at z=0
+        cosmo: instance of Cosmology class
     """
     def __init__(self, cosmo):
         
         self.cosmo = cosmo   # this is my cosmology class
         
-        fo = Fourier(self.cosmo.cosmo_cosmoprimo, engine='class')
-        self.__p_lin = fo.pk_interpolator()
+        # linear power spectrum
+        fo_lin = Fourier(self.cosmo.cosmo_cosmoprimo, engine='class', non_linear=False)
+        self.__p_lin = fo_lin.pk_interpolator()
         
+        # non-linear power spectrum
+        fo_nl = Fourier(self.cosmo.cosmo_cosmoprimo, engine='class', non_linear=True)
+        self.__p_nl = fo_nl.pk_interpolator()
+        
+        # arrays needed to compute integral to get sigma(M)
         self.__k = 10**np.arange(-6,2,0.01)
         self.__P = self.P_lin(self.__k, z=0)
         self.__tck = self.__get_sigma_spline() #spline fit to sigma(M,z=0)
@@ -40,6 +44,19 @@ class PowerSpectrum(object):
         """
         return self.__p_lin(k, z=0) * self.cosmo.growth_factor(z)**2
 
+    
+    def P_nl(self, k, z):
+        """
+        Returns the non-linear power spectrum at redshift z
+
+        Args:
+            k: array of k in units [h/Mpc]
+            z: array of z
+        Returns:
+            array of linear power spectrum in units [Mpc/h]^-3
+        """
+        return self.__p_nl(k, z=0) * self.cosmo.growth_factor(z)**2
+    
     
     def Delta2_lin(self, k, z):
         """
@@ -190,3 +207,60 @@ class PowerSpectrum(object):
             delta_c
         """
         return 1.686 / self.cosmo.growth_factor(z)
+
+    
+    
+    def get_xi(self, r, z, power_spectrum="lin"):
+        """
+        Returns the correlation function xi(r)
+    
+        Args:
+            r:                array of separation r, in units Mpc/h
+            z:                redshift to calculate xi
+            [power_spectrum]: can be "lin", "nl" or "zel" (default is "lin")
+        Returns:
+            array of xi evaluated at r values
+        """
+        
+        if power_spectrum=="lin":
+            # linear power spectrum
+            xi = self.__p_lin.to_xi()
+            
+        elif power_spectrum=="nl":
+            # non-linear power spectrum
+            xi = self.__p_nl.to_xi()
+            
+        elif power_spectrum=="zel":
+            # zeldovich power spectrum
+            # doesn't seem to be implemented in cosmoprimo
+            raise NotImplementedError("Zeldovich power spectrum not implemented")
+            
+        else:
+            raise ValueError("Invalid power spectrum", power_spectrum)
+
+        xi = xi(r, z)
+        return xi
+
+    
+    def get_wp(self, rp, z, pimax=120, power_spectrum="lin"):
+        """
+        Returns the projected correlation function wp(rp)
+    
+        Args:
+            r:                array of separation r, in units Mpc/h
+            z:                redshift to calculate xi
+            [pi_max]:         maximum value of pi in integral, in Mpc/h, default is 120
+            [power_spectrum]: can be "lin", "nl" or "zel" (default is "lin")
+        Returns:
+            array of wp evaluated at rp values
+        """
+        pi_bins = np.arange(0,pimax+0.01,0.1)
+        rp_grid, pi_grid = np.meshgrid(rp, pi_bins)
+        r_bins = (rp_grid**2 + pi_grid**2)**0.5
+    
+        # this is just in real space, and doesn't include the effect of RSD
+        xi = self.get_xi(r=r_bins, z=z, power_spectrum=power_spectrum)
+        wp = np.sum(xi,axis=0)
+    
+        return wp
+        

@@ -137,9 +137,57 @@ class Cosmology(object):
         return 4*np.pi*(c/H100) * self.comoving_distance(z)**2 / \
                                 self.cosmo_cosmoprimo.efunc(z)
     
-    
+
     def age(self, z):
         return self.cosmo_cosmoprimo.time(z)
+    
+    
+    def get_xi_scaling_factor(self, cosmo_new, r_bins, pimax=120,
+                               correlation_function="xi", scale=8, 
+                               power_spectrum="lin", z=0.2):
+        """
+        Returns the cosmology rescaling factors for the correlation
+        function
+
+        Args:
+            cosmo_new: new cosmology to rescale to
+            r_bins:    array of r bins that xi is evaluated at, in Mpc/h
+            [pimax]:   maximum value of pi in integral, for wp only, in Mpc/h.
+                       Default is 120
+            [correlation_function]: type of correlation function, "xi" or "wp".
+                       Default is "xi"
+            [scale]:   scale below which the scaling factor is set to 1, in Mpc/h.
+                       Default is 8
+            [power_spectrum]: "lin", "nl" or "zel"
+            [z]:       redshift. Default is 0.2
+        """
+
+        from hodpy.power_spectrum import PowerSpectrum
+
+        Pk1 = PowerSpectrum(self)
+        Pk2 = PowerSpectrum(cosmo_new)
+        
+        if correlation_function=="xi":
+            xi_c1 = Pk1.get_xi(r_bins, z=z, power_spectrum=power_spectrum)
+            xi_c2 = Pk2.get_xi(r_bins, z=z, power_spectrum=power_spectrum)
+            xi_c1_8 = Pk1.get_xi(np.array([scale,]), z=z, power_spectrum=power_spectrum)[0]
+            xi_c2_8 = Pk2.get_xi(np.array([scale,]), z=z, power_spectrum=power_spectrum)[0]
+            scaling_factor = xi_c2/xi_c1 * (xi_c1_8/xi_c2_8)
+            
+        elif correlation_function=="wp":
+            wp_c1 = Pk1.get_wp(r_bins, z=z, pimax=pimax, power_spectrum=power_spectrum)
+            wp_c2 = Pk2.get_wp(r_bins, z=z, pimax=pimax, power_spectrum=power_spectrum)
+            wp_c1_8 = Pk1.get_wp(np.array([scale,]), z=z, pimax=pimax, power_spectrum=power_spectrum)[0]
+            wp_c2_8 = Pk2.get_wp(np.array([scale,]), z=z, pimax=pimax, power_spectrum=power_spectrum)[0]
+            scaling_factor = wp_c2/wp_c1 * (wp_c1_8/wp_c2_8)
+            
+        else: 
+            raise ValueError("Invalid correlation function", correlation_function)
+        
+        # keep scaling_factor fixed to 1 below scale
+        scaling_factor[r_bins<scale] = 1.0
+    
+        return scaling_factor
     
 
 class CosmologyMXXL(Cosmology):

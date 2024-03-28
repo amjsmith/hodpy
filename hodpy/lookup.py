@@ -53,7 +53,7 @@ zq = 0.1
 ######### File locations for AbacusSummit lightcone ##########
 
 # AbacusSummit simulation
-abacus_mass_function = path+"/abacus/mass_function_c{:03d}_ph{:03d}.txt"
+abacus_mass_function = path+"/abacus/abacus_mass_functions_c{:03d}_ph{:03d}.hdf5"
 
 # HOD parameters for BGS mock
 abacus_hod_parameters    = path+'/abacus/hod_fits_c{:03d}_ph{:03d}.txt'

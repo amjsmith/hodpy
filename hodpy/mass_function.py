@@ -2,6 +2,7 @@
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import curve_fit
+import h5py
 
 from hodpy.power_spectrum import PowerSpectrum
 from hodpy.cosmology import CosmologyMXXL, CosmologyAbacus
@@ -192,34 +193,40 @@ class MassFunctionAbacus(object):
     Class containing the fits to the AbacusSummit halo mass function
 
     Args:
-        mf_fits_file: Tabulated file of the best fit mass function parameters
+        cosmo:   AbacusSummit cosmology number
+        [phase]: AbacusSummit phase. Default is 0.
+        [mf_file]: File containing the AbacusSummit mass function measurements.
+                   If none is provided, will read the file specified in 
+                   lookup.abacus_mass_function. Default value is None
     """
-    def __init__(self, cosmo, mf_fits_file=None):
+    def __init__(self, cosmo, phase=0, mf_file=None):
         
-        #self.power_spectrum = power_spectrum
         self.cosmology = CosmologyAbacus(cosmo)
-        self.power_spectrum = PowerSpectrum(self.cosmology)
-
-        # read the file specified in lookup.py, unless a different file
-        # name is provided
-        if mf_fits_file is None:
-            mf_fits_file = lookup.abacus_mass_function.format(cosmo,0)
-        redshift, dc, A, a, p= np.loadtxt(mf_fits_file, unpack=True)
-            
-            
-        # interpolate parameters
-        self.dc = RegularGridInterpolator((redshift,), dc, bounds_error=False, 
-                                          fill_value=None)
         
-        self.A = RegularGridInterpolator((redshift,), A, bounds_error=False, 
-                                          fill_value=None)
-
-        self.a = RegularGridInterpolator((redshift,), a, bounds_error=False, 
-                                          fill_value=None)
-
-        self.p = RegularGridInterpolator((redshift,), p, bounds_error=False, 
-                                          fill_value=None)
-
+        if mf_file is None:
+            # use default file specified in lookup.py
+            mf_file = lookup.abacus_mass_function.format(cosmo,phase)
+        
+        self.__logM, self.__z, self.__logn = self.__read_mf_file(mf_file, num_snap=15)
+        
+        self.__mass_function_interpolator = RegularGridInterpolator((self.__logM,self.__z),
+                            self.__logn, bounds_error=False, fill_value=None)
+        
+        
+    def __read_mf_file(self, mf_file, num_snap=15):
+        # read the file of mass functions measured from the simulation
+        f = h5py.File(mf_file, 'r')
+        logM = f['0/log_mass'][...]
+        zsnap = np.zeros(num_snap)
+        logn = np.zeros((len(logM),num_snap))
+        
+        for i in range(num_snap):
+            zsnap[i] = f['%i/z'%i][...][0]
+            logn[:,i] = f['%i/log_n'%i][...]
+        f.close()
+        
+        return logM, zsnap, logn
+        
 
     def mass_function(self, log_mass, redshift):
         '''
@@ -231,22 +238,12 @@ class MassFunctionAbacus(object):
             redshift: array of redshift
         Returns:
             array of halo mass function
-        '''        
+        '''     
+        n = self.number_density(log_mass, redshift)
         
-        sigma = self.power_spectrum.sigma(10**log_mass, redshift)
+        return mf * 10**log_mass / self.cosmology.mean_density(0)
 
-        dc = self.dc(redshift)
-        A = self.A(redshift)
-        a = self.a(redshift)
-        p = self.p(redshift)
-        
-        mf = A * np.sqrt(2*a/np.pi)
-        mf *= 1 + (sigma**2 / (a * dc**2))**p
-        mf *= dc / sigma
-        mf *= np.exp(-a * dc**2 / (2*sigma**2))
-
-        return mf
-
+    
     def number_density(self, log_mass, redshift):
         '''
         Returns the number density of haloes as a function of mass and redshift
@@ -258,8 +255,6 @@ class MassFunctionAbacus(object):
         Returns:
             array of halo number density in units (Mpc/h)^-3
         '''  
-        mf = self.mass_function(log_mass, redshift)
-
-        return mf * self.power_spectrum.cosmo.mean_density(0) / 10**log_mass
         
+        return 10**self.__mass_function_interpolator((log_mass,redshift))
 

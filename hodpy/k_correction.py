@@ -138,6 +138,14 @@ class DESI_KCorrection(object):
         colour_clipped = np.clip(colour, self.colour_min, self.colour_max)
         return self.__Y_interpolator(colour_clipped)
 
+    def set_cosmology(self, cosmology):
+        """
+        Set the cosmology used for converting between redshifts and distances
+        
+        Args:
+            cosmology: object of class Cosmology
+        """
+        self.cosmo = cosmology
         
     def k(self, redshift, restframe_colour):
         """
@@ -147,7 +155,7 @@ class DESI_KCorrection(object):
 
         Args:
             redshift: array of redshifts
-            restframe_colour:   array of ^0.1(g-r) colour
+            restframe_colour: array of ^0.1(g-r) colour
         Returns:
             array of K-corrections
         """
@@ -198,6 +206,9 @@ class DESI_KCorrection(object):
         Returns:
             array of apparent magnitudes
         """
+        if self.cosmo is None:
+            raise RuntimeError("Cosmology has not been set. Use the set_cosmology method")
+        
         # Luminosity distance
         D_L = (1.+redshift) * self.cosmo.comoving_distance(redshift)
 
@@ -223,6 +234,9 @@ class DESI_KCorrection(object):
         Returns:
             array of absolute magnitudes (with h=1)
         """
+        if self.cosmo is None:
+            raise RuntimeError("Cosmology has not been set. Use the set_cosmology method")
+            
         # Luminosity distance
         D_L = (1.+redshift) * self.cosmo.comoving_distance(redshift) 
 

@@ -317,12 +317,13 @@ class DESI_KCorrection_color(object):
             array of rest-frame colour
         """
         z = np.clip(redshift, 0.02, 0.59)
+        col_obs = np.clip(colour_obs, -0.99, 5)
         
         if interp:
-            return self.__grid_rest((redshift, colour_obs))
+            return self.__grid_rest((z, col_obs))
         
         else:
-            __, __, __, binnumber2 = stats.binned_statistic_2d(z, colour_obs, values=z, 
+            __, __, __, binnumber2 = stats.binned_statistic_2d(z, col_obs, values=z, 
                                 statistic='median', bins = [self.__xedges_rest, self.__yedges_rest], 
                                 expand_binnumbers=True)
         
@@ -345,12 +346,13 @@ class DESI_KCorrection_color(object):
             array of observer-frame colour
         """
         z = np.clip(redshift, 0.02, 0.59)
+        col_rest = np.clip(colour_rest, -0.99, 5)
 
         if interp:
-            return self.__grid_obs((redshift, colour_rest))
+            return self.__grid_obs((z, col_rest))
             
         else:
-            __, __, __, binnumber2 = stats.binned_statistic_2d(z, colour_rest, values=z,
+            __, __, __, binnumber2 = stats.binned_statistic_2d(z, col_rest, values=z,
                                 statistic='median', bins = [self.__xedges_obs, self.__yedges_obs], 
                                 expand_binnumbers=True)
 

@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
-from cosmoprimo.fiducial import AbacusSummit
+from cosmoprimo.fiducial import AbacusSummit, DESI
 from cosmoprimo import Cosmology as Cosmology_cosmoprimo
 
 class Cosmology(object):
@@ -255,3 +255,15 @@ class CosmologyAbacus(Cosmology):
         idx = np.where(cosmo_number==cosmo)[0][0]
         
         return np.array(self.__param_array[idx,2:], dtype="f")
+
+
+
+class CosmologyDESI(Cosmology):
+    """
+    DESI Survey fiducial cosmology
+    """
+    def __init__(self):
+        
+        cosmo_cosmoprimo = DESI()
+        
+        super().__init__(cosmo_cosmoprimo)

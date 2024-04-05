@@ -15,6 +15,8 @@ def add_magnitudes_colours(filename):
     Args:
         filename: filename of the clustering catalogue
     """
+    print("Adding ABSMAG_RP1 and REST_GMR_0P1 to", filename)
+    
     cosmo = CosmologyDESI()
     
     # read file and convert fluxes to apparent magnitudes
@@ -45,7 +47,13 @@ def add_magnitudes_colours(filename):
         absmag_r[in_reg] = kcorr_r.absolute_magnitude(rmag_dered[in_reg], 
             data['Z'][in_reg], rest_gmr[in_reg], use_ecorr=True, Q=0.67, zq=0.2)
     
+    data = Table.read(path+filename)
+    data['REST_GMR_0P1'] = rest_gmr
+    data['ABSMAG_RP1'] = absmag_r
     
+    data.write(path+filename, overwrite=True)
+          
+          
 if __name__ == '__main__':
     
     filename = sys.argv[1]

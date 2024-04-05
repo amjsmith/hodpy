@@ -46,8 +46,7 @@ def add_magnitudes_colours(filename):
         kcorr_r = DESI_KCorrection(band='r', photsys=photsys, cosmology=cosmo)
         absmag_r[in_reg] = kcorr_r.absolute_magnitude(rmag_dered[in_reg], 
             data['Z'][in_reg], rest_gmr[in_reg], use_ecorr=True, Q=0.67, zq=0.2)
-    
-    data = Table.read(path+filename)
+
     data['REST_GMR_0P1'] = rest_gmr
     data['ABSMAG_RP1'] = absmag_r
     

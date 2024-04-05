@@ -50,7 +50,7 @@ def add_magnitudes_colours(filename):
     data['REST_GMR_0P1'] = rest_gmr
     data['ABSMAG_RP1'] = absmag_r
     
-    data.write(path+filename, overwrite=True)
+    data.write(filename, overwrite=True)
           
           
 if __name__ == '__main__':

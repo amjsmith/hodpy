@@ -48,7 +48,7 @@ def add_magnitudes_colours(filename):
             data['Z'][in_reg], rest_gmr[in_reg], use_ecorr=True, Q=0.67, zq=0.2)
 
     data['REST_GMR_0P1'] = rest_gmr
-    data['ABSMAG_RP1'] = absmag_r
+    data['ABSMAG_R'] = absmag_r
     
     data.write(filename, overwrite=True)
           

@@ -63,6 +63,9 @@ abacus_hod_slide_factors = path+'/abacus/slide_factors_c{:03d}_ph{:03d}.dat' # w
 central_lookup_file   = path+"/abacus/central_magnitudes_c{:03d}_ph{:03d}_{}.npy"   # will be created if doesn't exist
 satellite_lookup_file = path+"/abacus/satellite_magnitudes_c{:03d}_ph{:03d}_{}.npy" # will be created if doesn't exist
 
+# Fraction of central galaxies, calculated using the HODs
+central_fraction_file = path+"/abacus/central_fraction_c{:03d}_ph{:03d}.npy" # will be created if doesn't exist
+
 # BGS k-corrections
 kcorr_file_bgs = path+'/bgs/jmext_kcorr_{}_{}band_z01.dat' # for magnitudes
 kcorr_gmr_bgs = path+'/bgs/gmr_lookup_{}_{}.hdf5'          # for g-r colours

@@ -82,6 +82,7 @@ class HOD_BGS(HOD):
         self.mag_faint = mag_faint 
         
         # initialize AbacusSummit cosmology
+        self.c = cosmo
         self.cosmo = CosmologyAbacus(cosmo)
         
         # initialize mass function. Use default AbacusSummit MF if none provided

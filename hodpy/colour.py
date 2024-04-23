@@ -254,7 +254,8 @@ class Colour(object):
     
 class ColourDESI(Colour):
     
-    def __init__(self, photsys, hod=None):
+    def __init__(self, photsys, hod=None, central_fraction_lookup_file=None, 
+                 replace_central_fraction_lookup_file=False):
         """
         Class containing methods for randomly assigning galaxies a rest-frame g-r 
         colour, using colour distributions fit to the DESI BGS Y1 data. The 
@@ -263,7 +264,13 @@ class ColourDESI(Colour):
 
         Args:
             photsys: photometric region, 'N' or 'S'
-            hod: object of class HOD
+            [hod]: object of class HOD
+            [central_fraction_lookup_file]: Location of lookup file of central fraction. 
+                    Will be created if the file doesn't already exist. If none is specified, 
+                    the default location defined by lookup.central_lookup_file will be used. 
+                    Default is None.
+            [replace_central_fraction_lookup_file]: Replace central_fraction_lookup_file if it
+                    already exists? Default is False. 
         """
         
         self.hod = hod
@@ -276,64 +283,58 @@ class ColourDESI(Colour):
         self.__red_mean_interpolator = self.__get_interpolator(mag_bins, z_bins, mu_reds)
         self.__red_rms_interpolator = self.__get_interpolator(mag_bins, z_bins, sig_reds)
         self.__fraction_blue_interpolator = self.__get_interpolator(mag_bins, z_bins, f_blues)
-        
-        #self.__central_fraction_interpolator = self.__initialize_central_fraction_interpolator(z=0.2)
-            
-            
-    def __initialize_central_fraction_interpolator(self, z=0.2):
 
+        
+        if not self.hod is None:
+            
+            if central_fraction_lookup_file is None:
+                central_fraction_lookup_file = lookup.central_fraction_file.format(hod.c,0)
+            
+            self.__central_fraction_interpolator = \
+                        self.__initialize_central_fraction_interpolator(central_fraction_lookup_file, 
+                                                replace_central_fraction_lookup_file)
+            
+
+    def __initialize_central_fraction_interpolator(self, central_fraction_lookup_file, 
+                                                replace_central_fraction_lookup_file):
         # Fraction of central galaxies is calculated using HODs
-
-        # TO DO: update this to create 2D array of fcen at different magnitudes
-        # and redshifts
+        magnitudes = np.arange(-23,-10, 0.5)
+        redshifts = np.arange(0,0.81,0.1)
         
-        magnitudes = np.arange(-23,-10,0.1)
-        fcen = np.zeros(len(magnitudes))
-
-        for i in range(len(magnitudes)):
-            magnitude = np.array([magnitudes[i],])
-            redshift = np.array([z,])
-            try:
-                logMmin = np.log10(self.hod.Mmin(magnitude))
-                logM1 = np.log10(self.hod.M1(magnitude))
-                logM0 = np.log10(self.hod.M0(magnitude))
-                sigmalogM = self.hod.sigma_logM(magnitude)
-                alpha = self.hod.alpha(magnitude)
-            except:
-                logMmin = np.log10(self.hod.Mmin(magnitude, redshift))
-                logM1 = np.log10(self.hod.M1(magnitude, redshift))
-                logM0 = np.log10(self.hod.M0(magnitude, redshift))
-                sigmalogM = self.hod.sigma_logM(magnitude, redshift)
-                alpha = self.hod.alpha(magnitude, redshift)
-
-            try:
-                n_all = self.hod.get_n_HOD(magnitude, redshift, logMmin, logM1, logM0, sigmalogM, alpha,
-                                Mmin=10, Mmax=16, galaxies="all")
-
-                n_cen = self.hod.get_n_HOD(magnitude, redshift, logMmin, logM1, logM0, sigmalogM, alpha,
-                                Mmin=10, Mmax=16, galaxies="cen")
+        try:
+            if replace_central_fraction_lookup_file: raise IOError
             
-            except:
-                n_all = self.hod.get_n_HOD2(magnitude, redshift, logMmin, logM1, logM0, sigmalogM, alpha,
-                            Mmin=10, Mmax=16, galaxies="all")
+            # try to read file
+            fcen = np.load(central_fraction_lookup_file)
+        
+        
+        except IOError:
+        
+            fcen = np.zeros((len(magnitudes),len(redshifts)))
+        
+            for i in range(len(magnitudes)):
+                print(i)
+                for j in range(len(redshifts)):
+                    magnitude = np.array([magnitudes[i],])
+                    redshift = np.array([redshifts[j],])
 
-                n_cen = self.hod.get_n_HOD2(magnitude, redshift, logMmin, logM1, logM0, sigmalogM, alpha,
-                            Mmin=10, Mmax=16, galaxies="cen")
 
-            fcen[i] = n_cen/n_all
-            
-        magnitudes2 = np.arange(-28,10,0.1)
-        fcen2 = np.zeros(len(magnitudes2))
-        fcen2[50:180] = fcen
-        fcen2[:50] = fcen[0]
-        fcen2[180:] = fcen[-1]
-    
-        return interp1d(magnitudes2, fcen2, kind='cubic')
+                    n_all = self.hod.get_n_HOD(magnitude, redshift, Mmin=10, Mmax=16, galaxies="all")
 
+                    n_cen = self.hod.get_n_HOD(magnitude, redshift, Mmin=10, Mmax=16, galaxies="cen")
+
+                    fcen[i,j] = n_cen/n_all
+                
+            np.save(central_fraction_lookup_file, fcen)
+
+        return RegularGridInterpolator((magnitudes, redshifts), fcen,
+                                        method='linear', bounds_error=False, fill_value=None)
         
         
     def read_fits(self, colour_fits, Nbins=19):
-        
+        """
+        Read the fits to the DESI colour-magnitude diagram
+        """
         f = h5py.File(colour_fits,'r')
         mag_bins = f['mag_binc'][...]
         z_bins = np.zeros(Nbins)
@@ -389,6 +390,7 @@ class ColourDESI(Colour):
         return frac_blue
     
     
+
     def fraction_central(self, magnitude, redshift):
         """
         Fraction of central galaxies as a function of magnitude and redshift
@@ -400,13 +402,14 @@ class ColourDESI(Colour):
             array of fraction of central galaxies
         """
 
-        # To do: calculate this properly from the HODs
+        if self.hod is None:
+            raise RuntimeError("A HOD needs to be provided when initializing ColourDESI to calculate the fraction of central galaxies")
         
-        print("WARNING: fraction_central set to 0.5 for testing")
-        
-        ###return self.__central_fraction_interpolator(magnitude)
-
-        return np.ones(len(magnitude))*0.5
+        f_cen = self.__central_fraction_interpolator((magnitude,redshift))
+    
+        f_cen = np.clip(f_cen, 0, 1) # make sure it is between 0 and 1
+    
+        return f_cen
         
         
     def satellite_mean(self, magnitude, redshift):

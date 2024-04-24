@@ -4,12 +4,12 @@ import sys
 sys.path.append('..')
 from hodpy.colour import ColourDESI
 
+print("Make plot showing the red and blue sequence, and fraction of blue galaxies, at z=0.1")
 
 # colour distributions in the South
 col = ColourDESI(photsys='S')
 
-z = 0.05 # redshift to make plot
-
+z = 0.1 # redshift to make plot
 
 magnitude = np.arange(-24,-10,0.01)
 redshift = np.ones(len(magnitude))*z
@@ -29,11 +29,30 @@ plt.fill_between(magnitude, blue_mean-blue_rms, blue_mean+blue_rms,
 fraction_blue = col.fraction_blue(magnitude, redshift)
 plt.plot(magnitude, fraction_blue, c="C0", ls="--", label="Blue fraction")
 
-
+plt.title('z = %.2f'%z)
 plt.legend(loc='upper right').draw_frame(False)
-
 plt.ylim(0,1.2)
-
 plt.xlabel('Mr')
+plt.show()
 
+
+print("Make plot showing the fraction of central galaxies at z=0.1")
+
+# To plot the fraction of central galaxies, need to initialize the ColourDESI class
+# with the HOD to use
+from hodpy.hod_bgs_abacus import HOD_BGS
+hod = HOD_BGS(cosmo=0, photsys='S', redshift_evolution=True)
+col = ColourDESI(photsys='S', hod=hod)
+
+z = 0.1 # redshift to make plot
+magnitude = np.arange(-24,-10,0.01)
+redshift = np.ones(len(magnitude))*z
+
+fraction_central = col.fraction_central(magnitude, redshift)
+plt.plot(magnitude, fraction_central, c="k", ls="--", label="Central fraction")
+
+plt.title('z = %.2f'%z)
+plt.legend(loc='upper right').draw_frame(False)
+plt.ylim(0,1.2)
+plt.xlabel('Mr')
 plt.show()

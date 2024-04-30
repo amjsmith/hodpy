@@ -53,11 +53,11 @@ def add_magnitudes_colours(filename):
         kcorr_col = DESI_KCorrection_color(photsys=photsys)
 
         z_reg = np.clip(z[in_reg],-0.5,1.0)
-        is_nan = np.is_nan(z_reg)
+        is_nan = np.isnan(z_reg)
         z_reg[is_nan] = 0
 
         obs_gmr_reg = np.clip(obs_gmr[in_reg],-3,3)
-        is_nan = np.is_nan(obs_gmr_reg)
+        is_nan = np.isnan(obs_gmr_reg)
         obs_gmr_reg[is_nan] = 0
     
         rest_gmr[in_reg] = kcorr_col.rest_frame_colour(z_reg, obs_gmr_reg)

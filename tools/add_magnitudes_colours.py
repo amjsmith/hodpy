@@ -51,7 +51,7 @@ def add_magnitudes_colours(filename):
         
         # convert observed colour to rest-frame
         kcorr_col = DESI_KCorrection_color(photsys=photsys)
-        rest_gmr[in_reg] = kcorr_col.rest_frame_colour(z[in_reg], obs_gmr[in_reg])
+        rest_gmr[in_reg] = kcorr_col.rest_frame_colour(z[in_reg], np.clip(obs_gmr[in_reg],-3,3))
         
         # convert apparent to absolute magnitude
         kcorr_r = DESI_KCorrection(band='r', photsys=photsys, cosmology=cosmo)

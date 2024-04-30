@@ -22,19 +22,21 @@ def add_magnitudes_colours(filename):
     # read file and convert fluxes to apparent magnitudes
     data = Table.read(filename)
 
-    # convert fluxes to apparent magnitudes
-    D_L = cosmo.comoving_distance(data['Z']) * (1+data['Z'])
-    distmod = 5*np.log10(D_L) + 25
-
     try:
         # try to read flux dered from catalogue
         flux_r_dered = data['flux_r_dered']
         flux_g_dered = data['flux_g_dered']
+        z = data['Z']
     except ValueError:
         # calcuate it if column doesn't exist
         flux_g_dered = data['FLUX_R']/data['MW_TRANSMISSION_R']
         flux_g_dered = data['FLUX_G']/data['MW_TRANSMISSION_G']
-    
+        z = data['Z_not4clus']
+
+    # convert fluxes to apparent magnitudes
+    D_L = cosmo.comoving_distance(z) * (1+z)
+    distmod = 5*np.log10(D_L) + 25
+        
     rmag_dered = 22.5 - 2.5*np.log10(np.maximum(1.0e-10,flux_r_dered))  #Note not deredening correction as fluxes in Fastspec catalogue are already dereddened
     gmag_dered = 22.5 - 2.5*np.log10(np.maximum(10.e-10,flux_g_dered))
     obs_gmr = gmag_dered - rmag_dered
@@ -49,12 +51,12 @@ def add_magnitudes_colours(filename):
         
         # convert observed colour to rest-frame
         kcorr_col = DESI_KCorrection_color(photsys=photsys)
-        rest_gmr[in_reg] = kcorr_col.rest_frame_colour(data['Z'][in_reg], obs_gmr[in_reg])
+        rest_gmr[in_reg] = kcorr_col.rest_frame_colour(z[in_reg], obs_gmr[in_reg])
         
         # convert apparent to absolute magnitude
         kcorr_r = DESI_KCorrection(band='r', photsys=photsys, cosmology=cosmo)
         absmag_r[in_reg] = kcorr_r.absolute_magnitude(rmag_dered[in_reg], 
-            data['Z'][in_reg], rest_gmr[in_reg], use_ecorr=True, Q=0.67, zq=0.1)
+            z[in_reg], rest_gmr[in_reg], use_ecorr=True, Q=0.67, zq=0.1)
 
     data['REST_GMR_0P1'] = rest_gmr
     data['ABSMAG_R'] = absmag_r

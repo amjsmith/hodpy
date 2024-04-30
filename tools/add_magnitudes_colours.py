@@ -29,7 +29,7 @@ def add_magnitudes_colours(filename):
         z = data['Z']
     except:
         # calcuate it if column doesn't exist
-        flux_g_dered = data['FLUX_R']/data['MW_TRANSMISSION_R']
+        flux_r_dered = data['FLUX_R']/data['MW_TRANSMISSION_R']
         flux_g_dered = data['FLUX_G']/data['MW_TRANSMISSION_G']
         z = data['Z_not4clus']
 

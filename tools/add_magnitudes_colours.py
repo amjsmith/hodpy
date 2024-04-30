@@ -26,8 +26,17 @@ def add_magnitudes_colours(filename):
     D_L = cosmo.comoving_distance(data['Z']) * (1+data['Z'])
     distmod = 5*np.log10(D_L) + 25
 
-    rmag_dered = 22.5 - 2.5*np.log10(np.maximum(1.0e-10,data['flux_r_dered']))  #Note not deredening correction as fluxes in Fastspec catalogue are already dereddened
-    gmag_dered = 22.5 - 2.5*np.log10(np.maximum(10.e-10,data['flux_g_dered']))
+    try:
+        # try to read flux dered from catalogue
+        flux_r_dered = data['flux_r_dered']
+        flux_g_dered = data['flux_g_dered']
+    except ValueError:
+        # calcuate it if column doesn't exist
+        flux_g_dered = data['FLUX_R']/data['MW_TRANSMISSION_R']
+        flux_g_dered = data['FLUX_G']/data['MW_TRANSMISSION_G']
+    
+    rmag_dered = 22.5 - 2.5*np.log10(np.maximum(1.0e-10,flux_r_dered))  #Note not deredening correction as fluxes in Fastspec catalogue are already dereddened
+    gmag_dered = 22.5 - 2.5*np.log10(np.maximum(10.e-10,flux_g_dered))
     obs_gmr = gmag_dered - rmag_dered
     
     # apply k-corrections to get rest-frame colours and absolute magnitudes
@@ -49,6 +58,7 @@ def add_magnitudes_colours(filename):
 
     data['REST_GMR_0P1'] = rest_gmr
     data['ABSMAG_R'] = absmag_r
+    data['ABSMAG_RP1'] = absmag_r
     
     data.write(filename, overwrite=True)
           

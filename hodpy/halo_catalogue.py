@@ -213,7 +213,7 @@ class AbacusCatalogue(HaloCatalogue):
                 # get ra, dec coordinates and redshifts
                 ra,dec,z_cos = self.pos3d_to_equatorial(halos['pos_avg'])  # check if redshift agree with redshift_interp
                 
-                vlos = self.vel_to_vlos(halos["pos_avg"], halos["vel_avg"])
+                v_los = self.vel_to_vlos(halos["pos_avg"], halos["vel_avg"])
                 z_obs = self.vel_to_zobs(z_cos, v_los)
 
 		# get mass of halos

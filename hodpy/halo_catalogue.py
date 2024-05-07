@@ -208,18 +208,17 @@ class AbacusCatalogue(HaloCatalogue):
                 # remove empty halos
                 filled = halos['N_interp']>0
                 halos = halos[filled]
-                                  
-                lc_cat = Catalogue(self.cosmology)
+
                 
                 # get ra, dec coordinates and redshifts
-                ra,dec,z_cos = lc_cat.pos3d_to_equatorial(halos['pos_avg'])  # check if redshift agree with redshift_interp
+                ra,dec,z_cos = self.pos3d_to_equatorial(halos['pos_avg'])  # check if redshift agree with redshift_interp
                 
-                vlos = lc_cat.vel_to_vlos(halos["pos_avg"], halos["vel_avg"])
-                z_obs = lc_cat.vel_to_zobs(z_cos, v_los)
+                vlos = self.vel_to_vlos(halos["pos_avg"], halos["vel_avg"])
+                z_obs = self.vel_to_zobs(z_cos, v_los)
 
 		# get mass of halos
 		Mpart = halo_cat.header['ParticleMassHMsun']
-		halo_mass = cat.halos['N_interp']*Mpart
+		halo_mass = halos['N_interp']*Mpart
 
         	self._quantities = {
             	'ra':    ra,

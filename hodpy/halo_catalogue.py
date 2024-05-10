@@ -208,12 +208,15 @@ class AbacusCatalogue(HaloCatalogue):
                 # remove empty halos
                 filled = halos['N_interp']>0
                 halos = halos[filled]
-
+                
+                origin = -990                               # Mpc/h
+                halos = halos[np.all(halos['pos_avg']>origin,axis=1)]     # remove halos beyond [-990,-990,-990]
+                halos_pos = halos['pos_avg']-origin                       # set the origin at [0,0,0]
                 
                 # get ra, dec coordinates and redshifts
-                ra,dec,z_cos = self.pos3d_to_equatorial(halos['pos_avg'])  # check if redshift agree with redshift_interp
+                ra,dec,z_cos = self.pos3d_to_equatorial(halos_pos)  # check if redshift agree with redshift_interp
                 
-                v_los = self.vel_to_vlos(halos["pos_avg"], halos["vel_avg"])
+                v_los = self.vel_to_vlos(halos_pos, halos["vel_avg"])
                 z_obs = self.vel_to_zobs(z_cos, v_los)
 
 		# get mass of halos

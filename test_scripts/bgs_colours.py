@@ -36,6 +36,7 @@ plt.xlabel('Mr')
 plt.show()
 
 
+##################################################
 print("Make plot showing the fraction of central galaxies at z=0.1")
 
 # To plot the fraction of central galaxies, need to initialize the ColourDESI class
@@ -55,4 +56,66 @@ plt.title('z = %.2f'%z)
 plt.legend(loc='upper right').draw_frame(False)
 plt.ylim(0,1.2)
 plt.xlabel('Mr')
+plt.show()
+
+
+
+
+##################################################
+print("Make plot showing the double-Gaussian colour distribution z=0.2")
+from scipy.stats import norm
+
+# To plot the fraction of central galaxies, need to initialize the ColourDESI class
+# with the HOD to use
+col_S = ColourDESI(photsys='S')
+col_N = ColourDESI(photsys='N')
+
+z = 0.2 # redshift to make plot
+M = -21 # magnitude to make plot
+
+plt.title(r'$z=%.1f, M_r=%.1f$'%(z, M))
+
+magnitude = np.ones(1)*M
+redshift = np.ones(1)*z
+colour = np.arange(0,1.3,0.01)
+
+# plot in the South
+mu_blue = col_S.blue_mean(magnitude, redshift)
+sig_blue = col_S.blue_rms(magnitude, redshift)
+mu_red = col_S.red_mean(magnitude, redshift)
+sig_red = col_S.red_rms(magnitude, redshift)
+
+blue_sequence_south = norm(loc=mu_blue, scale=sig_blue)
+red_sequence_south = norm(loc=mu_red, scale=sig_red)
+
+frac_blue_south = col_S.fraction_blue(magnitude, redshift)
+
+plt.plot(colour, blue_sequence_south.pdf(colour)*frac_blue_south, c='C0', ls=":", label='South')
+plt.plot(colour, red_sequence_south.pdf(colour)*(1-frac_blue_south), c='C3', ls=":")
+
+
+# plot in the North
+mu_blue = col_N.blue_mean(magnitude, redshift)
+sig_blue = col_N.blue_rms(magnitude, redshift)
+mu_red = col_N.red_mean(magnitude, redshift)
+sig_red = col_N.red_rms(magnitude, redshift)
+
+blue_sequence_north = norm(loc=mu_blue, scale=sig_blue)
+red_sequence_north = norm(loc=mu_red, scale=sig_red)
+
+frac_blue_north = col_N.fraction_blue(magnitude, redshift)
+
+plt.plot(colour, blue_sequence_north.pdf(colour)*frac_blue_north, c='C0', ls="--", label='North')
+plt.plot(colour, red_sequence_north.pdf(colour)*(1-frac_blue_north), c='C3', ls="--")
+
+# weighted combination
+area_south = 5193.6896 
+area_north = 2279.0288 
+area_fraction = area_south / (area_north+area_south)
+plt.plot(colour, blue_sequence_south.pdf(colour)*frac_blue_south*area_fraction + blue_sequence_north.pdf(colour)*frac_blue_north*(1-area_fraction), label='Weighted combination', c='k', ls="-")
+plt.plot(colour, red_sequence_south.pdf(colour)*(1-frac_blue_south)*area_fraction + red_sequence_north.pdf(colour)*(1-frac_blue_north)*(1-area_fraction), c='k', ls="-")
+
+plt.xlabel(r'$^{0.1}(g-r)$')
+plt.ylabel(r'$N_\mathrm{gal}$')
+plt.legend(loc='upper left').draw_frame(False)
 plt.show()

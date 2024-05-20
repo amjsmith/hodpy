@@ -94,9 +94,10 @@ class HOD_BGS(HOD):
         # initialize target luminosity function
         # this is needed to calculate 'slide factors' to evolve the HOD
         # BGS LF is already E-corrected, so set evolution parameters P = Q = 0
-        if target_lf_file is None:
-            target_lf_file = lookup.bgs_lf_target.format(cosmo,0)
-        self.lf = LuminosityFunctionTabulated(target_lf_file, P=0, Q=0) 
+        if self.redshift_evolution:
+            if target_lf_file is None:
+                target_lf_file = lookup.bgs_lf_target.format(cosmo,0)
+            self.lf = LuminosityFunctionTabulated(target_lf_file, P=0, Q=0) 
             
         # initialize k-corrections. Use default DESI BGS k-corrections if none provided
         if kcorr is None:

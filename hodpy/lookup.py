@@ -50,6 +50,11 @@ path = get_lookup_dir()
 Q = 0.67
 zq = 0.1
 
+# This sets the maximum distance of satellites, which are positioned following a NFW profile
+# To position galaxies out to the standard R200, set nfw_max = 1.0
+# For our AbacusSummit HOD fits, we used nfw_max = 1.5
+nfw_max = 1.5
+
 ######### File locations for AbacusSummit lightcone ##########
 
 # AbacusSummit simulation

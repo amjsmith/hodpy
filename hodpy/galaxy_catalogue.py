@@ -5,6 +5,7 @@ from scipy.interpolate import RegularGridInterpolator
 
 from hodpy.catalogue import Catalogue
 from hodpy.cosmology import CosmologyMXXL
+from hodpy import lookup
 
 
 class GalaxyCatalogue(Catalogue):
@@ -123,9 +124,9 @@ class GalaxyCatalogue(Catalogue):
         u = np.random.rand(len(conc))
 
         interpolator = self.__nfw_interpolator()
-        points = np.array(list(zip(np.log10(conc), np.log10(u))))
+        points = np.array(list(zip(np.log10(conc*lookup.nfw_max), np.log10(u))))
         distance[is_sat] = 10**interpolator(points)
-        distance[is_sat] *= r200
+        distance[is_sat] *= r200 * lookup.nfw_max
         return distance
 
     

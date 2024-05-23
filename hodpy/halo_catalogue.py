@@ -229,7 +229,7 @@ class AbacusCatalogue(HaloCatalogue):
             'mass':  halo_mass * 1e10,
             'zobs':  z_obs,
             'zcos':  z_cos,
-            'rvmax': halos['rvcirc_max_L2com'])
+            'rvmax': halos['rvcirc_max_L2com']
         }
 
         self.size = len(self._quantities['ra'])

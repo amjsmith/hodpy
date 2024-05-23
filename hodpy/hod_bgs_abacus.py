@@ -155,7 +155,24 @@ class HOD_BGS(HOD):
         return (N_gal * n_halo)[0]
  
                 
-    def get_n_HOD(self, magnitude, redshift, f):
+    def __integration_function(self, logM, mag, z, f, galaxies):
+        # function to integrate (number density of haloes * number of galaxies from HOD)
+                
+        # mean number of galaxies per halo
+        if galaxies=='all':
+            N_gal = self.number_galaxies_mean(np.array([logM,]),mag,z,f)[0]
+        elif galaxies=='cen':
+            N_gal = self.number_centrals_mean(np.array([logM,]),mag,z,f)[0]
+        elif galaxies=='sat':
+            N_gal = self.number_satellites_mean(np.array([logM,]),mag,z,f)[0]
+        
+        # number density of haloes
+        n_halo = self.mf.number_density(np.array([logM,]), z)
+                
+        return (N_gal * n_halo)[0]
+ 
+                
+    def get_n_HOD(self, magnitude, redshift, f=None, galaxies='all', Mmin=10, Mmax=16):
         """
         Returns the number density of galaxies predicted by the HOD. This is evaluated from
         integrating the halo mass function multiplied by the HOD. The arguments must be
@@ -167,8 +184,7 @@ class HOD_BGS(HOD):
         Returns:
             number density
         """
-        return quad(self.__integration_function, 10, 16, args=(magnitude, redshift, f))[0]
-
+        return quad(self.__integration_function, Mmin, Mmax, args=(magnitude, redshift, f, galaxies))[0]
 
     def __root_function(self, f, mag, z):
         # function used in root finding procedure for calculating the slide factors

@@ -29,7 +29,9 @@ class HOD_BGS(HOD):
         [mag_faint_extrapolate]: If specified, the HOD parameters Mmin and M1 will be
                         extrapolated linearly fainter than this magnitude. Default is -17
         [z0]:           Redshift at which the HODs were fitted. Default is 0.2
-        [mag_faint]:    Faint apparent magnitude limit. Default is 20.2 
+        [mag_faint]:    Faint magnitude limit. Default is 20.2 
+        [mag_faint_type]: Set whether the faint magnitude limit mag_faint is an apparent or absolute magnitude.
+                        Use either 'apparent' or 'absolute'. Default value is 'apparent'
         [hod_param_file]: Location of file which contains HOD parameters. If no value is 
                         provided, the file defined in lookup.abacus_hod_parameters
                         will be read. Default value is None.
@@ -59,17 +61,13 @@ class HOD_BGS(HOD):
         [replace_slide_file]: Replace slide_file if it already exists? Default is False
     """
 
-    def __init__(self, cosmo, photsys, mag_faint=20.2, mag_faint_extrapolate=-17, z0=0.2,
+    def __init__(self, cosmo, photsys, mag_faint_type='apparent', mag_faint=20.2, mag_faint_extrapolate=-17, z0=0.2,
                  hod_param_file=lookup.abacus_hod_parameters,
                  redshift_evolution=False, mass_function=None, kcorr=None,
                  slide_file=None, central_lookup_file=None, 
                  satellite_lookup_file=None, target_lf_file=None,
                  replace_central_lookup=False, replace_satellite_lookup=False,
                  replace_slide_file=False):
-        
-        
-        # TODO: include the option to set a faint absolute magnitude limit
-        
         # if set, the HOD parameters Mmin and M1 will be extrapolated linearly fainter than this 
         # magnitude. These were defined as cubic functions, so can shoot off to large values
         # outside the range they were fitted. 
@@ -78,8 +76,16 @@ class HOD_BGS(HOD):
         self.z0 = z0 # this is the redshift that the HODs were fitted at
         self.redshift_evolution = redshift_evolution # include redshift evolution?
         
-        # faintest apparent magnitude we are populating galaxies to
-        self.mag_faint = mag_faint 
+        # faintest apparent or absolute magnitude we are populating galaxies to
+        self.mag_faint = mag_faint
+
+        # should mag_faint be intepreted as an absolute or apparent magnitudes?
+        if mag_faint_type.lower()=='absolute' or mag_faint_type.lower()=='abs':
+            self.mag_faint_absolute = True # it is an absolute magnitude
+        elif mag_faint_type.lower()=='apparent' or mag_faint_type.lower()=='app':
+            self.mag_faint_absolute = False # it is an apparent magnitude
+        else:
+            raise ValueError('Unknown magnitude type. mag_faint_type must be set to either "apparent" or "absolute"')
         
         # initialize AbacusSummit cosmology
         self.c = cosmo
@@ -291,7 +297,12 @@ class HOD_BGS(HOD):
             print("Generating lookup table of satellite galaxy magnitudes")
 
             mags = np.arange(-25, -8, 0.01)
-            abs_mag_faint = self.kcorr.magnitude_faint(redshifts, self.mag_faint)
+            if self.mag_faint_absolute:
+                abs_mag_faint = np.ones(len(redshifts))*self.mag_faint
+            else:
+                # convert faint apparent magnitude limit to absolute magnitude at each redshift
+                abs_mag_faint = self.kcorr.magnitude_faint(redshifts, self.mag_faint)
+                
             arr_ones = np.ones(len(mags))
             for i in range(len(log_masses)):
                 for j in range(len(redshifts)):
@@ -618,8 +629,11 @@ class HOD_BGS(HOD):
         Returns:
             array of number of satellite galaxies
         """
-        # faint magnitude threshold at each redshift
-        magnitude = self.kcorr.magnitude_faint(redshift, self.mag_faint)
+        # faint absolute magnitude threshold at each redshift
+        if self.mag_faint_absolute:
+            magnitude = np.ones(len(log_mass)) * self.mag_faint
+        else:
+            magnitude = self.kcorr.magnitude_faint(redshift, self.mag_faint)
 
         # mean number of satellites in each halo brighter than the
         # faint magnitude threshold

@@ -244,14 +244,12 @@ class AbacusSnapshot(HaloCatalogue):
     Abacus halo catalogue from simulation snapshot
     """
     
-    def __init__(self, file_name, snapshot_redshift, 
-                 cosmology=None, particles=False, A=True, B=True,
+    def __init__(self, file_name, cosmo, snapshot_redshift, particles=False, A=True, B=True,
                  box_size=2000., clean=True):
         
         print("Abacus, clean=", clean)
-        self.cosmology = cosmology
+        self.cosmology = CosmologyAbacus(cosmo)
         self.box_size = box_size
-        self.c = cosmology.c
 
         # read halo catalogue file  
         if particles:
@@ -419,13 +417,12 @@ class AbacusSnapshotUnresolved(HaloCatalogue):
     Abacus catalogue of unresolved haloes, using random field particles as tracers
     """
     
-    def __init__(self, file_name, snapshot_redshift, cosmology=None, box_size=2000., 
+    def __init__(self, file_name, cosmo, snapshot_redshift, box_size=2000., 
                  SODensity=200, start=0, skip=1):
         
-        self.cosmology = cosmology
+        self.cosmology = CosmologyAbacus(cosmo)
         self.box_size = box_size
         self.so_density = SODensity
-        self.c = cosmology.c
 
         # read halo catalogue file  
         halo_cat = h5py.File(file_name, "r")

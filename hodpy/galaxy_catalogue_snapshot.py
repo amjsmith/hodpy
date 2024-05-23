@@ -86,6 +86,26 @@ class GalaxyCatalogueSnapshot(GalaxyCatalogue):
         self.add("vel", vel)
         self.add("zcos", np.ones(len(distance))*self.get_halo('zcos')[0])
 
+            
+    def add_colours(self, colour):
+        """
+        Add colours to the galaxy catalogue.
+
+        Args:
+            colour: object of the class Colour
+        """
+        col = np.zeros(self.size)
+        
+        is_cen = self.get("is_cen")
+        is_sat = self.get("is_sat")
+        abs_mag = self.get("abs_mag")
+        z = self.get("zcos")
+
+        col[is_cen] = colour.get_central_colour(abs_mag[is_cen], z[is_cen])
+        col[is_sat] = colour.get_satellite_colour(abs_mag[is_sat], z[is_sat])
+
+        self.add("col", col)
+
         
     def save_to_file(self, file_name, format, properties=None,
                      halo_properties=None):
@@ -160,7 +180,7 @@ class GalaxyCatalogueSnapshot(GalaxyCatalogue):
             raise ValueError("Invalid file format")
 
 
-class BGSGalaxyCatalogueSnapshot(GalaxyCatalogueSnapshot):
+class BGSGalaxyCatalogueSnapshotMXXL(GalaxyCatalogueSnapshot):
     """
     BGS galaxy catalogue for a simulation snapshot
 
@@ -174,35 +194,18 @@ class BGSGalaxyCatalogueSnapshot(GalaxyCatalogueSnapshot):
         self.box_size = 3000.
         self.cosmology = CosmologyMXXL()
 
-        
-    def add_colours(self, colour):
-        """
-        Add colours to the galaxy catalogue.
 
-        Args:
-            colour: object of the class Colour
-        """
-        col = np.zeros(self.size)
-        
-        is_cen = self.get("is_cen")
-        is_sat = self.get("is_sat")
-        abs_mag = self.get("abs_mag")
-        z = self.get("zcos")
+class BGSGalaxyCatalogueSnapshotAbacus(GalaxyCatalogueSnapshot):
+    """
+    BGS galaxy catalogue for a simulation snapshot
 
-        col[is_cen] = colour.get_central_colour(abs_mag[is_cen], z[is_cen])
-        col[is_sat] = colour.get_satellite_colour(abs_mag[is_sat], z[is_sat])
+    Args:
+        haloes: halo catalogue
+    """
+    def __init__(self, haloes, cosmo):
+        self._quantities = {}
+        self.size = 0
+        self.haloes = haloes
+        self.box_size = 2000.
+        self.cosmology = CosmologyAbacus(cosmo)
 
-        self.add("col", col)
-
-
-    def add_apparent_magnitude(self, k_correction):
-        """
-        Add apparent magnitude to catalogue, using a colour-dependent
-        k-correction
-
-        Args:
-            k_correction: object of the class GAMA_KCorrection
-        """
-        app_mag = k_correction.apparent_magnitude(self.get("abs_mag"),
-                                         self.get("zcos"), self.get("col"))
-        self.add("app_mag", app_mag)

@@ -274,6 +274,7 @@ class ColourDESI(Colour):
         """
         
         self.hod = hod
+        self.photsys = photsys
 
         colour_fits_file = lookup.colour_fits_bgs.format(photsys.upper())
         mag_bins, z_bins, mu_blues, sig_blues, mu_reds, sig_reds, f_blues = self.read_fits(colour_fits_file, Nbins=19)
@@ -286,6 +287,11 @@ class ColourDESI(Colour):
 
         
         if not self.hod is None:
+
+            # check photometric regions match
+            if self.photsys != hod.photsys:
+                import warnings
+                warnings.warn('photsys mismatch between colour and HOD', UserWarning)
             
             if central_fraction_lookup_file is None:
                 central_fraction_lookup_file = lookup.central_fraction_file.format(hod.c,0)

@@ -86,9 +86,9 @@ if __name__ == "__main__":
         input_file = abacus_path+'halo_info/halo_info_%03d.asdf'%file_number
         output_file = output_file = output_path+'BGS_box_%s_%03d.fits'%(photsys, file_number)
 
-    # populate the haloes with galaxies
-    main(input_file, output_file, cosmo=cosmo, photsys=photsys, snapshot_redshift=snapshot_redshift, mag_faint=mag_faint)
+        # populate the haloes with galaxies
+        main(input_file, output_file, cosmo=cosmo, photsys=photsys, snapshot_redshift=snapshot_redshift, mag_faint=mag_faint)
 
-    # join the 34 outputs into a single file
-    join_files(output_path, photsys)
+        # join the 34 outputs into a single file
+        join_files(output_path, photsys)
 

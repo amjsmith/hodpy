@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 from scipy.interpolate import RegularGridInterpolator
 
-from hodpy.cosmology import CosmologyMXXL
+from hodpy.cosmology import CosmologyMXXL, CosmologyAbacus
 from hodpy.galaxy_catalogue import GalaxyCatalogue
 
 
@@ -174,6 +174,32 @@ class GalaxyCatalogueSnapshot(GalaxyCatalogue):
                 t = Table(data, names=halo_properties)
                 t.write(file_name, format="fits")
 
+        elif format == "fits_BGS": # format for BGS mocks
+            from astropy.table import QTable, Table
+
+            # rename the various columns so they match the current mocks
+            #table = QTable(self._quantities)
+            table = Table()
+            
+            table['R_MAG_ABS'] = np.array(self.get('abs_mag'), dtype=np.float32)
+            table['G_R_REST'] = np.array(self.get('col'), dtype=np.float32)
+            table['HALO_MASS'] = np.array(self.get_halo('mass')/1e10, dtype=np.float32)
+            table['cen'] = np.array(self.get('is_cen'), dtype=np.int32)
+            
+            table['x'] = np.array(self.get('pos')[:,0], dtype=np.float32)
+            table['y'] = np.array(self.get('pos')[:,1], dtype=np.float32)
+            table['z'] = np.array(self.get('pos')[:,2], dtype=np.float32)
+
+            table['vx'] = np.array(self.get('vel')[:,0], dtype=np.float32)
+            table['vy'] = np.array(self.get('vel')[:,1], dtype=np.float32)
+            table['vz'] = np.array(self.get('vel')[:,2], dtype=np.float32)
+            
+            table['FILE_NUM'] = np.zeros(len(self.get_halo('mass')), dtype=np.int32)
+            
+            table['HALO_ID'] = np.array(self.get_halo('id'), dtype=np.int64)
+            
+            table.write(file_name, format="fits")
+            
         # can add more file formats...
 
         else:

@@ -90,6 +90,6 @@ if __name__ == "__main__":
         # populate the haloes with galaxies
         main(input_file, output_file, cosmo=cosmo, photsys=photsys, snapshot_redshift=snapshot_redshift, mag_faint=mag_faint)
 
-        # join the 34 outputs into a single file
-        join_files(output_path, photsys)
+    # join the 34 outputs into a single file
+    join_files(output_path, photsys)
 

@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from __future__ import print_function
 import numpy as np
-from astropy.table import Table
+from astropy.table import Table, vstack
 
 import sys
 sys.path.append('..')

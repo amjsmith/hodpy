@@ -85,7 +85,7 @@ if __name__ == "__main__":
     # each snapshot is split into 34 files
     for file_number in range(34):
         input_file = abacus_path+'halo_info/halo_info_%03d.asdf'%file_number
-        output_file = output_file = output_path+'BGS_box_%s_%03d.fits'%(photsys, file_number)
+        output_file = output_path+'BGS_box_%s_%03d.fits'%(photsys, file_number)
 
         # populate the haloes with galaxies
         main(input_file, output_file, cosmo=cosmo, photsys=photsys, snapshot_redshift=snapshot_redshift, mag_faint=mag_faint)

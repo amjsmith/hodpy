@@ -173,7 +173,7 @@ class HOD_BGS(HOD):
         return (N_gal * n_halo)[0]
  
                 
-    def get_n_HOD(self, magnitude, redshift, f=None, galaxies='all', Mmin=10, Mmax=16):
+    def get_n_HOD(self, magnitude, redshift=None, f=None, galaxies='all', Mmin=10, Mmax=16):
         """
         Returns the number density of galaxies predicted by the HOD. This is evaluated from
         integrating the halo mass function multiplied by the HOD. The arguments must be
@@ -185,6 +185,10 @@ class HOD_BGS(HOD):
         Returns:
             number density
         """
+        if self.redshift_evolution and redshift is None:
+            raise ValueError("Redshift must be provided")
+        else:
+            redshift = np.ones(len(magnitude))*self.z0
         return quad(self.__integration_function, Mmin, Mmax, args=(magnitude, redshift, f, galaxies))[0]
 
     def __root_function(self, f, mag, z):
@@ -330,7 +334,7 @@ class HOD_BGS(HOD):
 
                     log_x = np.log10(Nsat) - np.log10(Nsat_faint)
 
-                    if log_x[-1] == -np.inf: continue
+                    #if log_x[-1] == -np.inf: continue
 
                     # find this in the array log_xs
                     idx = np.searchsorted(log_x, log_xs)

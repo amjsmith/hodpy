@@ -254,8 +254,10 @@ class Colour(object):
     
 class ColourDESI(Colour):
     
-    def __init__(self, photsys, hod=None, central_fraction_lookup_file=None, 
-                 replace_central_fraction_lookup_file=False):
+    def __init__(self, photsys, hod=None, colour_fits_file=None,
+                 central_fraction_lookup_file=None, 
+                 replace_central_fraction_lookup_file=False,
+                 cutsky=False, cutsky_z0=0.2):
         """
         Class containing methods for randomly assigning galaxies a rest-frame g-r 
         colour, using colour distributions fit to the DESI BGS Y1 data. The 
@@ -275,8 +277,11 @@ class ColourDESI(Colour):
         
         self.hod = hod
         self.photsys = photsys
-
-        colour_fits_file = lookup.colour_fits_bgs.format(photsys.upper())
+        self.cutsky = cutsky
+        self.cutsky_z0 = cutsky_z0
+        
+        if colour_fits_file is None:
+            colour_fits_file = lookup.colour_fits_bgs.format(photsys.upper())
         mag_bins, z_bins, mu_blues, sig_blues, mu_reds, sig_reds, f_blues = self.read_fits(colour_fits_file, Nbins=19)
         
         self.__blue_mean_interpolator = self.__get_interpolator(mag_bins, z_bins, mu_blues)
@@ -410,7 +415,11 @@ class ColourDESI(Colour):
 
         if self.hod is None:
             raise RuntimeError("A HOD needs to be provided when initializing ColourDESI to calculate the fraction of central galaxies")
-        
+
+        if self.cutsky:
+            print("Cut-sky mock, using halo mass function at z=%.2f"%self.cutsky_z0)
+            redshift = np.ones(len(magnitude))*self.cutsky_z0
+            
         f_cen = self.__central_fraction_interpolator((magnitude,redshift))
     
         f_cen = np.clip(f_cen, 0, 1) # make sure it is between 0 and 1

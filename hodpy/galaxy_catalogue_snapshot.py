@@ -37,9 +37,9 @@ class GalaxyCatalogueSnapshot(GalaxyCatalogue):
         pos = pos_halo + pos_rel
 
         # deal with periodic boundary
-        idx = pos > self.box_size
+        idx = pos > self.box_size/2.
         pos[idx] -= self.box_size
-        idx = pos < 0
+        idx = pos < -self.box_size/2.
         pos[idx] += self.box_size
 
         return pos

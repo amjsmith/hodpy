@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import RegularGridInterpolator, splrep, splev
 from scipy.optimize import curve_fit
+from scipy.integrate import quad
 import h5py
 
 from hodpy.power_spectrum import PowerSpectrum
@@ -103,6 +104,17 @@ class MassFunction(object):
         return mf * self.power_spectrum.cosmo.mean_density(0) / 10**log_mass
         
 
+    def number_density_in_mass_bin(self, log_mass_min, log_mass_max, redshift=None):
+        '''
+        Returns the number density of haloes in a mass bin
+
+        Args:
+            log_mass: array of log_10 halo mass, where halo mass is in units Msun/h
+        Returns:
+            array of halo number density in units (Mpc/h)^-3
+        '''  
+        
+        return quad(self.number_density, log_mass_min, log_mass_max, args=redshift)[0]
         
 
 class MassFunctionMXXL(object):
@@ -258,3 +270,33 @@ class MassFunctionAbacus(object):
         
         return 10**self.__mass_function_interpolator((log_mass,redshift))
 
+
+    def number_density_in_mass_bin(self, log_mass_min, log_mass_max, redshift):
+        '''
+        Returns the number density of haloes in a mass bin
+
+        Args:
+            log_mass: array of log_10 halo mass, where halo mass is in units Msun/h
+        Returns:
+            array of halo number density in units (Mpc/h)^-3
+        '''  
+        
+        return quad(self.number_density, log_mass_min, log_mass_max, args=redshift)[0]
+    
+    
+    def get_random_masses(self, N, log_mass_min, log_mass_max, redshift):
+    
+        # get cumulative probability distribution
+        log_mass_bins = np.linspace(log_mass_min, log_mass_max, 10000)
+        prob_cum = self.number_density(log_mass_bins, redshift)
+        prob_cum = np.cumsum(prob_cum)
+        prob_cum-=prob_cum[0]
+        prob_cum/=prob_cum[-1]
+        
+        tck = splrep(prob_cum, log_mass_bins)
+    
+        r = np.random.rand(N)
+        
+        print(r, np.min(r), np.max(r))
+        
+        return splev(r, tck)

@@ -23,7 +23,6 @@ def main(input_file, output_file, cosmo, photsys, snapshot_redshift=0.2, mag_fai
     
     # to be safe, re-make the magnitude lookup tables on first loop iteration
     file_number = int(input_file[-8:-5])
-    print(file_number)
     replace_lookup = file_number==0
     
     # create halo catalogue

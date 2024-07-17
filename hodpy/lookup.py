@@ -84,6 +84,9 @@ bgs_lf_target = path+'/bgs/bgs_samples_cumulative_lf_c{:03d}_ph{:03d}_wsys.dat' 
 # BGS g-r colour distribution fits
 colour_fits_bgs = path+'/bgs/gmr_colour_fits_{}.hdf5'
 
+# Files containing number of field particles, used for cut-sky mocks. Will be created if don't exist
+Nparticle_file       = lookup_path+'/abacus/particles/N_c{:03d}_ph{:03d}.dat'
+Nparticle_shell_file = lookup_path+'/abacus/particles/Nshells_c{:03d}_ph{:03d}.dat'
 
 
 ######### File locations for MXXL lightcone ##########

@@ -48,7 +48,7 @@ if __name__ == '__main__':
     galaxy_cutsky_low      = output_path+'galaxy_cut_sky_low_%s'%(photsys) + '_%03d.fits'
     galaxy_cutsky          = output_path+'galaxy_cut_sky_%s'%(photsys) + '_%03d.hdf5'
 
-    galaxy_cutsky_final    = output_path+'galaxy_cut_sky_%s_col.fits'%(photsys)
+    galaxy_cutsky_final    = output_path+'galaxy_cut_sky_%s.fits'%(photsys)
 
 
 

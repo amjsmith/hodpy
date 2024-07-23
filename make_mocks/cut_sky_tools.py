@@ -12,7 +12,7 @@ from hodpy import lookup
 from hodpy.cosmology import CosmologyAbacus
 from hodpy.hod_bgs_abacus import HOD_BGS
 from hodpy.mass_function import MassFunctionAbacus
-from hodpy.k_correction import DESI_KCorrectionDESI_KCorrection, DESI_KCorrection_color
+from hodpy.k_correction import DESI_KCorrection, DESI_KCorrection_color
 from hodpy.luminosity_function import LuminosityFunctionTabulated
 from hodpy.catalogue import Catalogue
 from hodpy.halo_catalogue import AbacusSnapshotUnresolved

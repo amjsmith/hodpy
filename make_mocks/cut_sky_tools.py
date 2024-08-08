@@ -550,7 +550,7 @@ def main_unresolved(input_file, output_file, cosmo, photsys, snapshot_redshift=0
 
     # position galaxies around their haloes
     print("position galaxies")
-    gal_cat.position_galaxies()#conc="conc")
+    gal_cat.position_galaxies(conc="conc")
 
     # add g-r colours
     print("assigning g-r colours")

@@ -114,12 +114,12 @@ class GalaxyCatalogue(Catalogue):
         self.add("halo_ind", halo_ind)
 
 
-    def _get_distances(self):
+    def _get_distances(self, conc='conc'):
         # gets random distance of satellite to central
         distance = np.zeros(self.size)
 
         is_sat = self.get("is_sat")
-        conc = self.get_halo("mod_conc")[is_sat]
+        conc = self.get_halo(conc)[is_sat]
         r200 = self.get_halo("r200")[is_sat]
         u = np.random.rand(len(conc))
 
@@ -194,7 +194,7 @@ class GalaxyCatalogue(Catalogue):
         return vel_los_halo + vel_rel
 
 
-    def position_galaxies(self):
+    def position_galaxies(self, conc='conc'):
         """
         Position galaxies in haloes and give them random line of sight
         velocities. Centrals are positioned at the centre of the halo,
@@ -203,7 +203,7 @@ class GalaxyCatalogue(Catalogue):
         to the catalogue.
         """
         # random distance to halo centre
-        distance = self._get_distances()
+        distance = self._get_distances(conc=conc)
 
         # position around halo centre
         ra, dec, z_cos = self._get_positions(distance)

@@ -64,7 +64,7 @@ class GalaxyCatalogueSnapshot(GalaxyCatalogue):
         return vel_halo + vel_rel
 
 
-    def position_galaxies(self):
+    def position_galaxies(self, conc='conc'):
         """
         Position galaxies in haloes and give them random
         velocities. Centrals are positioned at the centre of the halo,
@@ -73,7 +73,7 @@ class GalaxyCatalogueSnapshot(GalaxyCatalogue):
         to the catalogue.
         """
         # random distance to halo centre
-        distance = self._get_distances()
+        distance = self._get_distances(conc=conc)
 
         # position around halo centre
         pos = self._get_positions(distance)

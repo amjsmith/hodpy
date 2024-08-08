@@ -79,7 +79,7 @@ def main(input_file, output_file, cosmo, photsys, snapshot_redshift=0.2, mag_fai
     gal_cat.add_galaxies(hod)
 
     # position galaxies around their haloes
-    gal_cat.position_galaxies()
+    gal_cat.position_galaxies(conc='conc')
     
     # add g-r colours
     col = ColourDESI(photsys=photsys, hod=hod)

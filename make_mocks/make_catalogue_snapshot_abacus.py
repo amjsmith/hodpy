@@ -112,7 +112,7 @@ def join_files(path, photsys):
         del table_i
     
     # write the new table
-    table.write(output_path+'BGS_box_%s.fits'%(photsys), format="fits")
+    table.write(path+'BGS_box_%s.fits'%(photsys), format="fits")
     
         
     

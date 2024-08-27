@@ -127,7 +127,8 @@ class HOD_BGS(HOD):
                 slide_file = lookup.abacus_hod_slide_factors.format(cosmo,0)
                 
             self.__slide_interpolator = \
-                self.__initialize_slide_factor_interpolator(slide_file)
+                self.__initialize_slide_factor_interpolator(slide_file,
+                                                            replace_slide_file=replace_slide_file)
         
         # initialize the lookup tables to get magnitudes for central and 
         # satellite galaxies. These files are created if they don't exist, or 
@@ -187,7 +188,7 @@ class HOD_BGS(HOD):
         """
         if self.redshift_evolution and redshift is None:
             raise ValueError("Redshift must be provided")
-        else:
+        elif not self.redshift_evolution:
             redshift = np.ones(len(magnitude))*self.z0
         return quad(self.__integration_function, Mmin, Mmax, args=(magnitude, redshift, f, galaxies))[0]
 
@@ -200,7 +201,7 @@ class HOD_BGS(HOD):
         return log_n_targ - log_n_hod
         
             
-    def __initialize_slide_factor_interpolator(self, slide_file):
+    def __initialize_slide_factor_interpolator(self, slide_file, replace_slide_file=False):
         # creates a RegularGridInterpolator object used for finding 
         # the 'slide factor' as a function of mag and z
 
@@ -208,6 +209,8 @@ class HOD_BGS(HOD):
         redshifts = np.arange(0, 0.81, 0.05)
         
         try:
+            if replace_slide_file: raise Exception
+            
             # try to read file
             factors = np.loadtxt(slide_file)
             
@@ -339,9 +342,12 @@ class HOD_BGS(HOD):
                     # find this in the array log_xs
                     idx = np.searchsorted(log_x, log_xs)
 
-                    # interpolate 
-                    f = (log_xs - log_x[idx-1]) / (log_x[idx] - log_x[idx-1])
-                    magnitudes[i,j,:] = mags[idx-1] + f*(mags[idx]-mags[idx-1])
+                    # interpolate
+                    try:
+                        f = (log_xs - log_x[idx-1]) / (log_x[idx] - log_x[idx-1])
+                        magnitudes[i,j,:] = mags[idx-1] + f*(mags[idx]-mags[idx-1])
+                    except IndexError:
+                        magnitudes[i,j,:] = mags[idx-1]
 
                     # Deal with NaN values
                     # if NaN for small x but not large x, replace all 

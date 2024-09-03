@@ -1,6 +1,17 @@
 #! /usr/bin/env python
 import numpy as np
 
+def is_negative_zero(array):
+    """
+    Checks the values of a numpy array for negative zero values (-0.0)
+
+    Args:
+        array: numpy array of floats or integers
+    Returns:
+        boolean array, True for elements equal to -0.0, False otherwise
+    """
+    return np.logical_and(array == 0, np.copysign(1, array) == -1)
+
 
 class Catalogue(object):
     """
@@ -90,11 +101,21 @@ class Catalogue(object):
 
         # get ra
         ra = np.arctan(pos[:,1] / pos[:,0])
-        ind = np.logical_and(pos[:,1] < 0, pos[:,0] > 0)
+        ind = np.logical_and(pos[:,1] < 0, pos[:,0] >= 0)
         ra[ind] += 2*np.pi
         ind = pos[:,0] < 0
         ra[ind] += np.pi
 
+        # Fix some rare edge cases where x=0
+        ind = is_negative_zero(pos[:,0])
+        ra[ind] += np.pi
+        ind = np.logical_and(is_negative_zero(pos[:,0]), pos[:,1]<0)
+        ra[ind] -= 2*np.pi
+    
+        # If x=0 and y=0, set RA=0 to avoid NaN
+        ind = np.logical_and(pos[:,0]==0, pos[:,1]==0)
+        ra[ind] = 0
+        
         # get z from comoving distance
         r_com = np.sqrt(np.sum(pos**2, axis=1))
         z = self.cosmology.redshift(r_com)

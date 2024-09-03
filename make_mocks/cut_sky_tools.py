@@ -675,7 +675,7 @@ def make_lightcone(input_file, output_file, hod, photsys, mag_faint, snapshot_re
                 cat_new.write(output_file[:-5]+'_rep%i%i%i.fits'%(i,j,k), format="fits")
 
 
-def join_files(galaxy_cutsky, galaxy_cutsky_low, output_file, zmax_low=0.15, zmax=0.6):
+def join_files(galaxy_cutsky, galaxy_cutsky_low, output_file, zmax_low=0.15, zmax=0.6, app_mag_faint=20.2):
     '''
     Combine the cut-sky outputs into a single file
     '''
@@ -702,14 +702,13 @@ def join_files(galaxy_cutsky, galaxy_cutsky_low, output_file, zmax_low=0.15, zma
                         continue
                         
         table_i['FILE_NUM'][:] = file_number
-        keep = np.logical_and(table_i['Z'] >= zmax_low, table_i['Z'] <= zmax)
-        # keep = np.logical_and(table_i['Z'] >= 0, table_i['Z'] <= zmax)
+        keep = np.logical_and.reduce((table_i['Z'] >= zmax_low, table_i['Z'] <= zmax, table_i['R_MAG_APP']<=app_mag_faint))
         table_i = table_i[keep]
         
         try:
             table_j = Table.read(galaxy_cutsky_low%file_number)
             table_j['FILE_NUM'][:] = file_number
-            keep = table_j['Z'] < zmax_low
+            keep = np.logical_and(table_j['Z'] < zmax_low, table_j['R_MAG_APP']<=app_mag_faint)
             table_j = table_j[keep]
         except:
             table_j = Table()

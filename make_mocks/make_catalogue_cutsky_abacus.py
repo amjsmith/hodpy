@@ -159,4 +159,4 @@ if __name__ == '__main__':
     
 
 
-    join_files(galaxy_cutsky, galaxy_cutsky_low, output_file=galaxy_cutsky_final, zmax_low=zmax_low, zmax=zmax)
+    join_files(galaxy_cutsky, galaxy_cutsky_low, output_file=galaxy_cutsky_final, zmax_low=zmax_low, zmax=zmax, app_mag_faint=app_mag_faint)

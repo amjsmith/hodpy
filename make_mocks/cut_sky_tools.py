@@ -717,5 +717,39 @@ def join_files(galaxy_cutsky, galaxy_cutsky_low, output_file, zmax_low=0.15, zma
         del table_j
         
     
+    # make new table with column names consistent with the previous version of the mock
+    table_new = Table()
+    table_new['R_MAG_APP'] = np.array(table['R_MAG_APP'], dtype=np.float32)
+    table_new['R_MAG_ABS'] = np.array(table['R_MAG_ABS'], dtype=np.float32)
+    table_new['G_R_REST']  = np.array(table['G_R_RES'],   dtype=np.float32)
+    table_new['G_R_OBS']   = np.array(table['G_R_OBS'],   dtype=np.float32)
+    table_new['DEC']       = np.array(table['DEC'],       dtype=np.float32)
+    table_new['HALO_MASS'] = np.array(table['HALO_MASS'], dtype=np.float32)
+    table_new['CEN']       = np.array(table['cen'],       dtype=np.int32)
+    table_new['RES']       = np.array(table['res'],       dtype=np.int32)
+    table_new['RA']        = np.array(table['RA'],        dtype=np.float32)
+    table_new['Z_COSMO']   = np.array(table['Z_COSMO'],   dtype=np.float32)
+    table_new['Z']         = np.array(table['Z'],         dtype=np.float32)
+    table_new['FILE_NUM']  = np.array(table['FILE_NUM'],  dtype=np.int32)
+    
+    unres = table_new['RES']==0
+    halo_id = np.array(table['HALO_ID'], dtype=np.int64)
+    halo_id[unres]=-1
+    table_new['HALO_ID']   = halo_id
+    
+    box_index = np.array(table['box_ind'], dtype=np.int32)
+    box_index[unres]=-1
+    table_new['BOX_INDEX'] = box_index
+    
+    table_new['x_box'] = np.array(table['x'],     dtype=np.float32)
+    table_new['y_box'] = np.array(table['y'],     dtype=np.float32)
+    table_new['z_box'] = np.array(table['z'],     dtype=np.float32)
+    table_new['x_rep'] = np.array(table['x_rep'], dtype=np.float32)
+    table_new['y_rep'] = np.array(table['y_rep'], dtype=np.float32)
+    table_new['z_rep'] = np.array(table['z_rep'], dtype=np.float32)
+    table_new['vx']    = np.array(table['vx'],    dtype=np.float32)
+    table_new['vy']    = np.array(table['vy'],    dtype=np.float32)
+    table_new['vz']    = np.array(table['vz'],    dtype=np.float32)
+    
     # write the new table
-    table.write(output_file, format="fits")
+    table_new.write(output_file, format="fits")

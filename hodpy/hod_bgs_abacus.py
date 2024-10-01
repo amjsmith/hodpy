@@ -75,7 +75,6 @@ class HOD_BGS(HOD):
 
         self.z0 = z0 # this is the redshift that the HODs were fitted at
         self.redshift_evolution = redshift_evolution # include redshift evolution?
-        self.photsys=photsys #photometric region
         
         # faintest apparent or absolute magnitude we are populating galaxies to
         self.mag_faint = mag_faint
@@ -145,16 +144,6 @@ class HOD_BGS(HOD):
             self.__initialize_satellite_interpolator(satellite_lookup_file, 
                                                      replace_satellite_lookup)
 
-        
-    def __integration_function(self, logM, mag, z, f):
-        # function to integrate (number density of haloes * number of galaxies from HOD)
-                
-        # mean number of galaxies per halo
-        N_gal = self.number_galaxies_mean(np.array([logM,]),mag,z,f)[0]
-        # number density of haloes
-        n_halo = self.mf.number_density(np.array([logM,]), z)
-                
-        return (N_gal * n_halo)[0]
  
                 
     def __integration_function(self, logM, mag, z, f, galaxies):
@@ -512,7 +501,11 @@ class HOD_BGS(HOD):
         """
         
         if not self.redshift_evolution:
-            return self.__M0_z0(magnitude)
+            M0 = self.__M0_z0(magnitude)
+            # just set M0 to zero at the faintest magnitudes, to avoid any problems
+            idx = magnitude>-17
+            M0[idx] = 0
+            return M0
         
         # use target LF to convert magnitude to number density
         n = self.lf.Phi_cumulative(magnitude, redshift)
@@ -523,6 +516,10 @@ class HOD_BGS(HOD):
 
         # find M0
         M0 = self.__M0_z0(magnitude)
+        
+        # just set M0 to zero at the faintest magnitudes, to avoid any problems
+        idx = magnitude>-17
+        M0[idx] = 0
         
         # use slide factor to evolve M0
         if not f is None:

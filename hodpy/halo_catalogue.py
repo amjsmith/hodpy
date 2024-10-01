@@ -4,8 +4,7 @@ import h5py
 from scipy.stats import skewnorm
 from abacusnbody.data.compaso_halo_catalog import CompaSOHaloCatalog
 
-from hodpy.cosmology import CosmologyMXXL
-from hodpy.cosmology import CosmologyAbacus
+from hodpy.cosmology import CosmologyMXXL, CosmologyAbacus
 from hodpy.catalogue import Catalogue
 from hodpy import lookup
 
@@ -195,9 +194,10 @@ class AbacusCatalogue(HaloCatalogue):
     AbacusSummit halo lightcone catalogue - work in progress
     """
 
-    def __init__(self, file_name, cosmo):
+    def __init__(self, file_name, cosmo, origin=-990):
 
         self.cosmology = CosmologyAbacus(cosmo)
+        self.origin = origin
 
         # read halo catalogue file
         halo_cat = CompaSOHaloCatalog(file_name, cleaned=True, 
@@ -210,12 +210,12 @@ class AbacusCatalogue(HaloCatalogue):
         filled = halos['N_interp']>0
         halos = halos[filled]
                 
-        origin = -990                               # Mpc/h
-        halos = halos[np.all(halos['pos_avg']>origin,axis=1)]     # remove halos beyond [-990,-990,-990]
-        halos_pos = halos['pos_avg']-origin                       # set the origin at [0,0,0]
+        # remove halos beyond [-990,-990,-990]
+        halos = halos[np.all(halos['pos_avg']>=self.origin,axis=1)]
+        halos_pos = halos['pos_avg']-self.origin # set the origin at [0,0,0]
                 
         # get ra, dec coordinates and redshifts
-        ra,dec,z_cos = self.pos3d_to_equatorial(halos_pos)  # check if redshift agree with redshift_interp
+        ra,dec,z_cos = self.pos3d_to_equatorial(halos_pos) # check if redshift agree with redshift_interp
                 
         v_los = self.vel_to_vlos(halos_pos, halos["vel_avg"])
         z_obs = self.vel_to_zobs(z_cos, v_los)
@@ -227,7 +227,7 @@ class AbacusCatalogue(HaloCatalogue):
         self._quantities = {
             'ra':    ra,
             'dec':   dec,
-            'mass':  halo_mass * 1e10,
+            'mass':  halo_mass,
             'zobs':  z_obs,
             'zcos':  z_cos,
             'rvmax': halos['rvcirc_max_L2com']

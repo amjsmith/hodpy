@@ -3,8 +3,7 @@ import numpy as np
 import h5py
 from scipy.interpolate import RegularGridInterpolator
 
-from hodpy.catalogue import Catalogue
-from hodpy.cosmology import CosmologyMXXL
+from hodpy.catalogue import Catalogue, CosmologyMXXL
 from hodpy import lookup
 
 
@@ -308,29 +307,30 @@ class GalaxyCatalogue(Catalogue):
             f.close()
 
         elif format == "fits":
-            from astropy.table import Table
+            from astropy.table import Table, vstack, hstack
             
             if properties is None:
                 # save every property
                 t = Table(list(self._quantities.values()), 
                           names=list(self._quantities.keys()))
-                t.write(file_name, format="fits")
             else:
                 # save specified properties
                 data = [None] * len(properties)
                 for i, prop in enumerate(properties):
                     data[i] = self._quantities[prop]
                 t = Table(data, names=properties)
-                t.write(file_name, format="fits")
 
             if not halo_properties is None:
                 # save specified halo properties
-                data = [None] * len(halo_properties)
+                data_h = [None] * len(halo_properties)
                 for i, prop in enumerate(halo_properties):
-                    data[i] = self.get_halo(prop)
+                    data_h[i] = self.get_halo(prop)
                     halo_properties[i] = "halo_" + halo_properties[i]
-                t = Table(data, names=halo_properties)
-                t.write(file_name, format="fits")
+                t_h = Table(data_h, names=halo_properties)
+
+                t = hstack([t, t_h])
+
+            t.write(file_name, format="fits")
 
         # can add more file formats...
 

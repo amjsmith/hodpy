@@ -75,6 +75,7 @@ class HOD_BGS(HOD):
 
         self.z0 = z0 # this is the redshift that the HODs were fitted at
         self.redshift_evolution = redshift_evolution # include redshift evolution?
+        self.photsys = photsys
         
         # faintest apparent or absolute magnitude we are populating galaxies to
         self.mag_faint = mag_faint

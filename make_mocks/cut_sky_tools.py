@@ -721,7 +721,7 @@ def join_files(galaxy_cutsky, galaxy_cutsky_low, output_file, zmax_low=0.15, zma
     table_new = Table()
     table_new['R_MAG_APP'] = np.array(table['R_MAG_APP'], dtype=np.float32)
     table_new['R_MAG_ABS'] = np.array(table['R_MAG_ABS'], dtype=np.float32)
-    table_new['G_R_REST']  = np.array(table['G_R_RES'],   dtype=np.float32)
+    table_new['G_R_REST']  = np.array(table['G_R_REST'],   dtype=np.float32)
     table_new['G_R_OBS']   = np.array(table['G_R_OBS'],   dtype=np.float32)
     table_new['DEC']       = np.array(table['DEC'],       dtype=np.float32)
     table_new['HALO_MASS'] = np.array(table['HALO_MASS'], dtype=np.float32)

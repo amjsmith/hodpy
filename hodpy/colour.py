@@ -298,11 +298,11 @@ class ColourDESI(Colour):
                 import warnings
                 warnings.warn('photsys mismatch between colour and HOD', UserWarning)
             
-            if central_fraction_lookup_file is None:
-                central_fraction_lookup_file = lookup.central_fraction_file.format(hod.c,0)
+        if central_fraction_lookup_file is None:
+            central_fraction_lookup_file = lookup.central_fraction_file.format(hod.c,0)
             
-            self.__central_fraction_interpolator = \
-                        self.__initialize_central_fraction_interpolator(central_fraction_lookup_file, 
+        self.__central_fraction_interpolator = \
+                self.__initialize_central_fraction_interpolator(central_fraction_lookup_file, 
                                                 replace_central_fraction_lookup_file)
             
 
@@ -413,8 +413,8 @@ class ColourDESI(Colour):
             array of fraction of central galaxies
         """
 
-        if self.hod is None:
-            raise RuntimeError("A HOD needs to be provided when initializing ColourDESI to calculate the fraction of central galaxies")
+        #if self.hod is None:
+        #    raise RuntimeError("A HOD needs to be provided when initializing ColourDESI to calculate the fraction of central galaxies")
 
         if self.cutsky:
             print("Cut-sky mock, using halo mass function at z=%.2f"%self.cutsky_z0)

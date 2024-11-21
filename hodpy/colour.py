@@ -308,8 +308,6 @@ class ColourDESI(Colour):
             except:
                 c_hod = None
                 
-            print(c,c_hod)
-                
             if not c == c_hod:
                 if not (c is None or c_hod is None):
                     raise RuntimeError('HOD cosmology does not match cosmo argument')

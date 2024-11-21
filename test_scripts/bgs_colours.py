@@ -7,7 +7,7 @@ from hodpy.colour import ColourDESI
 print("Make plot showing the red and blue sequence, and fraction of blue galaxies, at z=0.1")
 
 # colour distributions in the South
-col = ColourDESI(photsys='S')
+col = ColourDESI(photsys='S', cosmo=0)
 
 z = 0.1 # redshift to make plot
 
@@ -67,8 +67,8 @@ from scipy.stats import norm
 
 # To plot the fraction of central galaxies, need to initialize the ColourDESI class
 # with the HOD to use
-col_S = ColourDESI(photsys='S')
-col_N = ColourDESI(photsys='N')
+col_S = ColourDESI(photsys='S', cosmo=0))
+col_N = ColourDESI(photsys='N', cosmo=0))
 
 z = 0.2 # redshift to make plot
 M = -21 # magnitude to make plot

@@ -51,6 +51,10 @@ class GalaxyCatalogueSnapshot(GalaxyCatalogue):
         # velocity of halo
         vel_halo = self.get_halo("vel")
 
+        # satellite galaxies
+        is_sat = self.get("is_sat")
+        Nsat = np.count_nonzero(is_sat)
+
         # velocity dispersion from Eq. 12 of Skibba+2006 (in proper km/s)
         vel_disp = np.sqrt(2.151e-9 * (self.get_halo("mass")*\
                           (1.+self.get_halo("zcos"))/self.get_halo("r200")))
@@ -58,8 +62,8 @@ class GalaxyCatalogueSnapshot(GalaxyCatalogue):
         # random velocity along each axis
         vel_rel = np.zeros(vel_halo.shape)
         for i in range(3):
-            vel_rel[:,i] = vel_disp*np.random.normal(loc=0.0, scale=1.0, 
-                                                     size=self.size)
+            vel_rel[is_sat,i] = vel_disp[is_sat]*np.random.normal(loc=0.0, scale=1.0, 
+                                                     size=Nsat)
 
         return vel_halo + vel_rel
 
